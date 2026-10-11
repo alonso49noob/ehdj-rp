@@ -215,7 +215,10 @@ def map_panel(canvas, body, x0, y0, w, h):
 def thumb(canvas, path, x0, y0, w, h, title):
     if not path.exists():
         return
-    im = Image.open(path).convert("RGB").resize((w, h), Image.NEAREST if "Biomes" in path.name else Image.LANCZOS)
+    im = Image.open(path)
+    if im.mode.startswith("I"):                                  # alturas de 16 bits
+        im = Image.fromarray((np.asarray(im, np.float32) / 257).astype(np.uint8))
+    im = im.convert("RGB").resize((w, h), Image.NEAREST if "Biomes" in path.name else Image.LANCZOS)
     canvas.paste(im, (x0, y0))
     d = ImageDraw.Draw(canvas)
     d.rectangle([x0, y0, x0 + w, y0 + h], outline=(90, 95, 110))

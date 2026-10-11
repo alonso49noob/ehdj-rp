@@ -1,11 +1,13 @@
 """Construye la versión instalable del pack en build/GameData/MundosLejanos (con texturas DDS).
 
 Las fuentes (GameData/MundosLejanos) siguen en PNG: es lo que escriben los generadores y lo que pinta el artista.
-Aquí se convierten a DDS con mipmaps las texturas que van a la GPU: las de ScaledVersion (texture, normals),
-anillos, shader de la estrella y texturas de detalle del terreno. KSP las carga más rápido, ocupan menos memoria
-y no parpadean al verse pequeñas. Se quedan en PNG los mapas que KSP lee en la CPU (alturas, biomas y
-VertexColorMap, incluidos los _Color que el PQS usa a la vez): los biomas necesitan colores exactos y las alturas
-no admiten pérdida.
+Aquí se convierten a DDS:
+- texturas de GPU (ScaledVersion texture y normals, anillos, estrella, detalle del terreno): DXT con mipmaps;
+- mapas de color del terreno (VertexColorMap, que lee la CPU): DXT sin mipmaps (con mipmaps si la GPU también
+  los usa, como los _Color de los cuerpos menores); OPM hace lo mismo con sus mapas de color;
+- alturas (_Height) de 16 bits: DDS R16 (luminancia de 16 bits, sin pérdida), que Kopernicus lee a 16 bits;
+  las de 8 bits se quedan en PNG.
+Siguen en PNG los mapas de biomas (necesitan colores exactos) y las alturas de 8 bits.
 
 - Fuente RGBA -> DXT5: el alfa es la máscara especular de los _Color, o la X de las normales DXT5nm.
 - Fuente RGB o gris -> DXT1.
@@ -24,6 +26,7 @@ import struct
 import subprocess
 import sys
 
+import numpy as np
 from PIL import Image
 
 import sistema as S
@@ -34,6 +37,7 @@ OUT = ROOT / "build" / "GameData" / S.PACK
 KSP = pathlib.Path(r"C:/Program Files (x86)/Steam/steamapps/common/Kerbal Space Program/GameData")
 GPU_KEYS = {"texture", "normals", "sunspotTex", "noiseMap", "rampMap",
             "lowTex", "midTex", "highTex", "steepTex", "lowBumpMap", "midBumpMap", "highBumpMap", "steepBumpMap"}
+CPU_KEYS = {"map"}                                   # VertexHeightMap y VertexColorMap
 REF = re.compile(r"^\s*@?(\w+)\s*=\s*(" + re.escape(S.PACK) + r"/\S+?\.png)\b", re.M)
 
 
@@ -46,8 +50,24 @@ def references():
     return refs
 
 
-def encode_dds(src, dst):
-    """PNG -> DDS DXT1/DXT5 con cadena de mipmaps hasta 4 px, volteado en vertical."""
+def encode_r16(src, dst):
+    """Altura PNG (8 o 16 bits) -> DDS de luminancia de 16 bits (R16_UNorm en KSPTextureLoader), volteado."""
+    im = Image.open(src)
+    a = np.asarray(im, np.float64)
+    a = a if im.mode.startswith("I") else a * 257.0
+    data = np.ascontiguousarray(np.clip(a, 0, 65535).astype("<u2")[::-1])
+    h, w = data.shape
+    header = bytearray(128)
+    header[0:4] = b"DDS "
+    struct.pack_into("<7I", header, 4, 124, 0x1 | 0x2 | 0x4 | 0x8 | 0x1000, h, w, w * 2, 0, 1)   # CAPS|H|W|PITCH|PIXELFORMAT
+    struct.pack_into("<8I", header, 76, 32, 0x20000, 0, 16, 0xFFFF, 0, 0, 0)   # DDPF_LUMINANCE, 16 bits, R = 0xFFFF
+    struct.pack_into("<I", header, 108, 0x1000)                                # DDSCAPS_TEXTURE
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_bytes(bytes(header) + data.tobytes())
+
+
+def encode_dds(src, dst, mips=True):
+    """PNG -> DDS DXT1/DXT5 (con cadena de mipmaps hasta 4 px si mips), volteado en vertical."""
     im = Image.open(src)
     alpha = im.mode in ("RGBA", "LA", "PA") or "transparency" in im.info
     im = im.convert("RGBA" if alpha else "RGB").transpose(Image.Transpose.FLIP_TOP_BOTTOM)
@@ -59,7 +79,7 @@ def encode_dds(src, dst):
         data = buf.getvalue()
         header = header or bytearray(data[:128])
         levels.append(data[128:])
-        if min(cur.size) <= 4:
+        if min(cur.size) <= 4 or not mips:
             break
         cur = cur.resize((cur.width // 2, cur.height // 2), Image.Resampling.BOX)
     struct.pack_into("<I", header, 28, len(levels))                                   # dwMipMapCount
@@ -72,7 +92,10 @@ def encode_dds(src, dst):
 
 def build():
     refs = references()
-    convert = {path for path, keys in refs.items() if keys <= GPU_KEYS}   # solo GPU: ningún uso en CPU
+    convert = {path for path, keys in refs.items() if keys <= GPU_KEYS | CPU_KEYS}   # biomas: PNG
+    # Alturas: a R16 solo las de 16 bits (las de 8 bits ganan tamaño sin ganar precisión: se quedan en PNG)
+    convert = {p for p in convert
+               if not p.endswith("_Height.png") or Image.open(SRC.parent / p).mode.startswith("I")}
     wanted, encoded = set(), 0
     for src in SRC.rglob("*"):
         if not src.is_file():
@@ -83,7 +106,10 @@ def build():
             dst = dst.with_name(dst.name + ".dds")
             wanted.add(dst)
             if not dst.exists() or dst.stat().st_mtime < src.stat().st_mtime:
-                encode_dds(src, dst)
+                if rel.endswith("_Height.png"):
+                    encode_r16(src, dst)
+                else:
+                    encode_dds(src, dst, mips=bool(refs[rel] & GPU_KEYS))
                 encoded += 1
             continue
         dst = OUT.parent / rel

@@ -58,10 +58,24 @@ PLAN = {
         ("Duna", "SlabsMed", "LosasLava", (0.45, 0.35, 0.30), 1.0, ["Llanuras de Lava", "Volcanes", "Gran Volcan"], None, 2),
         ("Tylo", "SmallRocksVar1", "BloquesHielo", (1.25, 1.28, 1.32), 1.0, ["Casquetes Polares", "Tundra de Amoniaco"], None, 2),
     ],
-    "Skolta": [  # anortosita blanca, basalto con azufre y rocas de cobre azules
+    "Skolta": [  # todos los biomas de tierra: rocas, bloques y objetos propios de cada uno
+        # rocas sueltas: costas, salinas, llanuras y dunas (arena ocre / orgánica oscura)
+        ("Duna", "SmallRocksVar1", "RocasCosta", (0.80, 0.62, 0.46), 1.0, ["Costas", "Salinas", "Llanuras"], None, 2),
+        ("Duna", "SmallRocksVar2", "GuijarrosOrganicos", (0.38, 0.30, 0.25), 1.0, ["Dunas"], None, 2),
+        ("Duna", "MedRocksVar2", "BloquesLlanura", (0.82, 0.64, 0.44), 1.0, ["Llanuras", "Costas"], None, 2),
+        # anortosita blanca de las tierras altas y montañas
         ("Tylo", "SmallRocksVar1", "RocasAnortosita", (1.30, 1.28, 1.22), 1.0, ["Tierras Altas", "Montanas"], None, 2),
+        ("Tylo", "LargeRocksVar1", "BloquesAnortosita", (1.25, 1.22, 1.18), 1.0, ["Tierras Altas", "Montanas"], None, 2),
+        # campos volcánicos: losas de basalto con azufre y agujas de toba
         ("Duna", "SlabsSmall", "LosasBasalto", (0.70, 0.60, 0.40), 1.0, ["Campos Volcanicos", "Llanuras"], None, 2),
+        ("Dres", "Spire", "AgujasVolcanicas", (0.62, 0.50, 0.30), 1.0, ["Campos Volcanicos"], None, 2),
+        # salinas: cristales de sales de amonio
+        ("Pol", "MedCluster", "CristalesSal", (1.45, 1.40, 1.30), 1.0, ["Salinas"], None, 2),
+        # yacimientos de cobre y níquel: rocas y vetas metálicas azules y violetas
         ("Duna", "SmallRocksVar1", "RocasCobre", (0.45, 0.60, 1.20), 1.0, ["Yacimientos Metalicos"], None, 2),
+        ("Moho", "SmallMetalCluster", "VetasCobre", (0.40, 0.55, 1.25), 1.0, ["Yacimientos Metalicos"], None, 2),
+        # casquetes: escarcha de amoníaco y sales
+        ("Eeloo", "IceSlabsTinySlabs", "EscarchaPolar", (1.05, 1.02, 0.95), 1.0, ["Casquetes Polares"], None, 2),
     ],
     "Termos": [  # losas de basalto, costras de sílice blanca, toba y costras de azufre en los pozos ácidos
         ("Duna", "SlabsSmall", "LosasBasalto", (0.55, 0.50, 0.46), 1.0, ["Llanuras Basalticas", "Campos Volcanicos"], None, 2),

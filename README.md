@@ -74,7 +74,7 @@ Un mundo transneidoniano de hielos de nitrógeno y metano, de 900 km:
 | Kopernicus (probado con 1.12.1-247) | Planetas y estrellas |
 | ModuleManager | Parches de antena y ciencia |
 | **CTTP** (Community Terrain Texture Pack) | *Recomendado*: texturas de detalle del suelo. Sin CTTP, el pack usa sus propias texturas de respaldo (`PluginData/Terreno`), más simples |
-| Parallax Continued + Parallax_StockScatterTextures | *Opcional*: rocas, cristales y **las máquinas** de Kraken. Sin ellos el pack funciona, pero sin scatters |
+| Parallax Continued + Parallax_StockScatterTextures + Parallax_StockTerrainTextures | *Opcional*: rocas, cristales, **las máquinas** de Kraken y terreno detallado a ras de suelo en todos los cuerpos rocosos. Sin ellos el pack funciona, pero sin scatters ni terreno de Parallax |
 | Scatterer + StockScattererConfigs | *Opcional*: atmósferas, océanos y destello de Kraken |
 | EVE (Blackrack) + StockVolumetricClouds | *Opcional*: nubes 2D y volumétricas V5 |
 | PlanetShine | *Opcional*: luz reflejada por cada mundo |
@@ -106,6 +106,8 @@ herramientas/
   generar_texturas.py      texturas provisionales
   generar_cuerpos_menores.py  configs de las lunas y del Cinturón Oscuro de Kraken
   generar_scatters.py      scatters de Parallax y su PQSMod
+  generar_detalle.py       terreno de Parallax y relieve/color a ras de suelo (PQSMods de ruido)
+  compilar_plugin.py       compila plugin/*.cs -> Plugins/MundosLejanos.dll (coma y colas de cometas)
   generar_visuales.py      configs de Scatterer, EVE y PlanetShine, y texturas de EVE
   generar_referencias.py   láminas de referencia para el artista (PNG + PDF)
   previsualizar.py         vistas previas de docs/
@@ -113,7 +115,8 @@ herramientas/
   validar_pack.py          comprobación completa sin abrir KSP
   construir.py             versión instalable con DDS en build/ (y --instalar: la copia a KSP)
   empaquetar.py            zip para playtesters: Descargas/ehdj_rp-v<versión>.zip
-arte/                      fuentes del artista que usan los generadores (Kraken_Textura.png)
+arte/                      fuentes del artista que usan los generadores (Kraken_Textura.png, Termos_Textura.png)
+plugin/                    código del plugin (Cometas.cs): coma y colas, configuradas con MUNDOSLEJANOS_COMETA
 docs/
   CONCEPTO_CREUS_HALUM.md  historia, estructura interna y lugares con nombre
   DISENO.md / TEXTURAS.md  Creus–Halum

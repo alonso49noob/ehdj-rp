@@ -14,7 +14,7 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 import sistema as S
-from generar_texturas import GLOSS_SEA, HEIGHTMAPS, ICE_ALPHA
+from generar_texturas import GLOSS_SEA, HEIGHTMAPS, ICE_ALPHA, height_unit
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GD_TEX = ROOT / "GameData" / S.PACK / "PluginData"
@@ -77,7 +77,7 @@ EVE = {
     "Norh": dict(alt=4000, lo=4000, hi=12000, color=(214, 178, 138), fade=(150000, 200000), swap=False,
                  cover=0.45),      # aire saturado de NH3: muchas nubes
     "Skolta": dict(alt=3000, lo=3000, hi=10000, color=(222, 206, 180), fade=(140000, 190000), swap=False,
-                   cover=0.60),    # nubes de NH3 crema casi continuas (ficha de Skolta)
+                   cover=0.35),    # nubes de NH3 crema (menos que el 60 % inicial: tapaban el contraste mar/tierra)
     "Termos": dict(alt=2500, lo=2500, hi=7000, color=(238, 238, 234), fade=(70000, 100000), swap=True),   # vapor
 }
 OCEAN_SCALED = {"Halum": "#6b94cc", "Salus": "#24484a", "Termos": "#4f9aa6"}   # color del mar visto desde órbita
@@ -90,7 +90,7 @@ ALBEDO = {"Creus": 0.70, "Halum": 0.55, "Ocrea": 0.85, "Pastora": 0.05, "Prima":
           "Termos": 0.50, "Tyrna": 0.60, "Karmen": 0.15, "Talia": 0.12, "Akira": 0.65}
 THICK = {"Creus": 1.0, "Halum": 1.0, "Scarch": 1.0, "Tenebris": 0.15, "Salus": 0.6, "Norh": 1.0, "Skolta": 1.0,
          "Termos": 1.0, "Akira": 0.8}
-HAZE = {"Scarch": 0.65, "Norh": 0.70, "Skolta": 0.58}   # peso de la neblina horneada en _Color (generar_texturas)
+HAZE = {"Scarch": 0.65, "Norh": 0.70, "Skolta": 0.40}   # peso de la neblina horneada en _Color (generar_texturas)
 
 
 def img(body, kind, mode="RGB"):
@@ -99,8 +99,8 @@ def img(body, kind, mode="RGB"):
 
 def height(body, shape):
     hm = HEIGHTMAPS[body]
-    g = Image.open(GD_TEX / body / f"{body}_Height.png").resize(shape[::-1], Image.BILINEAR)
-    return hm["offset"] + np.asarray(g, np.float32) / 255 * hm["deformity"]
+    g = Image.fromarray(height_unit(GD_TEX / body / f"{body}_Height.png"), "F").resize(shape[::-1], Image.BILINEAR)
+    return hm["offset"] + np.asarray(g, np.float32) * hm["deformity"]
 
 
 def coverage(body):

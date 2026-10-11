@@ -21,7 +21,12 @@ import sistema as S
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 VERSION = ROOT / "VERSION"
 CAPTURAS = {"docs/preview_sistema.png": "capturas/creus_halum.png",
-            "docs/kraken/preview_kraken.png": "capturas/kraken.png"}
+            "docs/kraken/preview_kraken.png": "capturas/kraken.png",
+            "docs/norh/preview_norh_anillos.png": "capturas/norh.png",
+            "docs/skolta/preview_skolta.png": "capturas/skolta.png",
+            "docs/termos/preview_termos.png": "capturas/termos.png",
+            "docs/termos/preview_talia.png": "capturas/talia.png",
+            "docs/akira/preview_akira.png": "capturas/akira.png"}
 
 
 def descargas():

@@ -51,6 +51,9 @@ Menú de depuración: `Alt+F12` → Cheats → **Set Orbit**. Pon una nave en ó
 - [ ] **Salus**: arcos de islas. Sus lunas son Vestigia y Nox (casi negra).
 - [ ] **Cinturón Oscuro** (Fuligo, Caligo, Atra y asteroides): casi invisibles.
 - [ ] **Halum**: amerizar en el océano de neón (7 atm). Volver a órbita es difícil, a propósito.
+- [ ] **Cometa Heraldo**: tiene coma verdosa, cola de iones azul (siempre opuesta a Kerbol) y cola de polvo curvada. Se ve desde el mapa (Tracking Station o vista de mapa) y crece al acercarse a Kerbol. Lo dibuja el plugin `MundosLejanos.dll`.
+- [ ] **Terreno a ras de suelo** (con Parallax): texturas de suelo detalladas, colinas y cambios de color en todos los cuerpos rocosos; en Skolta, rocas, bloques, agujas volcánicas, cristales de sal y vetas de cobre según el bioma.
+- [ ] **Cuerpos menores** (Ceniza, Vestigia, Nox, Lumen, cinturón oscuro, asteroides): cráteres de todos los tamaños, con bordes claros y rayos en los más jóvenes.
 - [ ] **Norh** (troyano de Jool, 60° por detrás):
   - comprueba con el tiempo acelerado que sigue a Jool sin acercarse ni alejarse;
   - los anillos de hielo se ven inclinados y no giran con el planeta;

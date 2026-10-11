@@ -294,9 +294,18 @@ def downsample(a, f):
 
 
 def encode_height(h, body):
+    """Altura -> PNG gris de 16 bits (h = offset + valor/65535 × deformity). Con 8 bits, un desnivel de 7 km
+    deja escalones de 27 m; con 16, de 0.1 m. construir.py lo pasa a DDS R16, que Kopernicus lee a 16 bits."""
     hm = HEIGHTMAPS[body]
     g = np.clip((h - hm["offset"]) / hm["deformity"], 0, 1)
-    return Image.fromarray((g * 255 + 0.5).astype(np.uint8), "L")
+    return Image.fromarray((g * 65535 + 0.5).astype(np.uint16))
+
+
+def height_unit(path):
+    """Lee un _Height.png (8 o 16 bits) como valores 0..1."""
+    im = Image.open(path)
+    a = np.asarray(im, np.float32)
+    return a / (65535.0 if im.mode.startswith("I") else 255.0)
 
 
 # ------------------------------------------------------------------ Creus
@@ -496,24 +505,101 @@ SMALL = {
 }
 
 
+def _window(LAT, LON, c, ext):
+    """Filas y columnas del mapa que cubren un casquete de radio ext (rad) alrededor de c (vuelta en ±180°)."""
+    H, W = LAT.shape
+    lat_c, lon_c, e = np.degrees(np.arcsin(c[2])), np.degrees(np.arctan2(c[1], c[0])), np.degrees(ext)
+    rows = slice(max(0, int((90 - lat_c - e) / 180 * H) - 1), min(H, int((90 - lat_c + e) / 180 * H) + 2))
+    edge = min(89.0, abs(lat_c) + e)
+    half = e / np.cos(np.radians(edge))
+    if abs(lat_c) + e >= 89 or half >= 179:
+        return rows, np.arange(W)
+    return rows, np.arange(int((lon_c - half + 180) / 360 * W) - 1, int((lon_c + half + 180) / 360 * W) + 2) % W
+
+
+def craters(h, alb, X, LAT, LON, rng, radius, gee, span, n_max=6000, slope=2.0, rmax=0.3, fresh=0.06):
+    """Cráteres a todas las escalas, de unos 3 píxeles a rmax (rad): distribución acumulada N(>r) ∝ r^-slope.
+    - Simples (cuenco, profundidad = 1/5 del diámetro) o complejos (fondo plano, paredes en terrazas y pico
+      central) por encima del diámetro de transición, que crece cuando baja la gravedad (Luna: ~18 km).
+    - Bordes irregulares y manto de eyección; los viejos, más someros, de borde gastado y fondo oscurecido.
+    - Unos pocos jóvenes, con eyección clara y rayos brillantes hasta 8 radios.
+    h (m) y alb (variación de albedo, ±) se modifican en su sitio."""
+    Hh = h.shape[0]
+    rmin = 3.0 * np.pi / Hh
+    if 2 * (rmax / rmin) ** slope > n_max:                    # tope de cráteres: se sube el tamaño mínimo
+        rmin = rmax * (2 / n_max) ** (1 / slope)
+    n = int(2 * (rmax / rmin) ** slope)
+    a, b = rmin ** -slope, rmax ** -slope
+    radii = np.sort((a - rng.random(n) * (a - b)) ** (-1 / slope))[::-1]
+    r_cx = 9000.0 * 1.62 / max(gee * S.G0, 0.05)              # radio de transición simple/complejo (m)
+    for r in radii:
+        c = random_unit(rng)
+        young = rng.random() < fresh
+        age = 0.0 if young else rng.random() ** 0.7
+        r_m = r * radius
+        depth = 0.4 * r_m if r_m < r_cx else 0.4 * r_cx * (r_m / r_cx) ** 0.3
+        depth = min(depth, 0.35 * span) * (1 - 0.65 * age)
+        rim = 0.32 * depth * (1 - 0.7 * age)
+        rays = young and r > 6 * rmin
+        ext = r * (6.0 if rays else 2.6)
+        rows, cols = _window(LAT, LON, c, ext)
+        Xw = X[rows][:, cols]
+        u, v = tangent_uv(Xw, c, r)
+        th = np.arctan2(v, u)
+        ph = rng.random(3) * 2 * np.pi
+        wob = 1 + 0.06 * np.sin(3 * th + ph[0]) + 0.035 * np.sin(7 * th + ph[1]) + 0.02 * np.sin(13 * th + ph[2])
+        d = np.arccos(np.clip(Xw @ c, -1, 1)) / r / wob        # distancia en radios, borde irregular
+        if r_m < r_cx:
+            inside = depth * (d ** 2 - 1) + rim * d ** 4
+        else:                                                  # complejo
+            f = 0.45
+            wall = smooth(f, 1.0, d)
+            terr = 0.06 * depth * np.sin(np.clip((d - f) / (1 - f), 0, 1) * 4 * np.pi) * (1 - age)
+            inside = -depth + (depth + rim) * wall ** 1.4 + terr + 0.45 * depth * np.exp(-(d / 0.11) ** 2) * (1 - 0.5 * age)
+        outside = rim * np.maximum(d, 1) ** -3 * smooth(2.6, 1.0, d)
+        dh = np.where(d < 1, inside, outside)
+        # Albedo: borde de roca expuesta más claro (menos cuanto más viejo) y fondo viejo oscurecido por el polvo
+        dal = (0.15 * (1 - age) * np.exp(-((d - 1) / 0.12) ** 2)
+               - 0.12 * age * smooth(0.95, 0.2, d))
+        if young:
+            dal = dal + 0.18 * smooth(2.2, 0.9, d) * (0.7 + 0.3 * np.cos(9 * th + ph[0]))   # eyección clara
+            if rays:                                                                  # rayos finos e irregulares
+                k = int(rng.integers(10, 21))
+                ray = np.abs(np.sin(k * th / 2 + ph[1])) ** 60 * (0.5 + 0.5 * np.sin(d * 5 + ph[2] + 3 * th))
+                dal = dal + 0.16 * ray * smooth(6.0, 1.2, d) * (d > 1)
+        h[rows, cols] += dh
+        alb[rows, cols] += dal
+
+
+def cavity(h):
+    """Curvatura del relieve a dos escalas (convexo > 0: bordes y crestas; cóncavo < 0: fondos), en −1..1.
+    Horneada en el color realza cráteres y relieve sin depender de la dirección de la luz."""
+    out = np.zeros(h.shape, np.float32)
+    for f in (1, 4):                                           # escala fina y escala 4× más gruesa
+        hs = h if f == 1 else np.asarray(Image.fromarray(downsample(h, f).astype(np.float32), "F")
+                                         .resize(h.shape[::-1], Image.BILINEAR), np.float32)
+        lap = np.roll(hs, 1, 0) + np.roll(hs, -1, 0) + np.roll(hs, 1, 1) + np.roll(hs, -1, 1) - 4 * hs
+        out += -lap / (np.quantile(np.abs(lap), 0.98) + 1e-6)
+    return np.clip(out / 2, -1, 1)
+
+
 def small(body):
-    """Cuerpo menor: patata con cráteres + un rasgo único (FEATURES) con su propio bioma."""
+    """Cuerpo menor con detalle a varias escalas: forma de patata, relieve fino, cráteres de todos los tamaños
+    (craters()), el rasgo único (FEATURES) con su bioma, y albedo según la edad de cada cráter.
+    Resolución: 4096×2048 si el radio pasa de 100 km, 2048×1024 en el resto (antes, 1024×512 para todos)."""
     cfg, hm = SMALL[body], HEIGHTMAPS[body]
-    W, H = 1024, 512
+    B = S.BODIES[body]
+    W, H = (4096, 2048) if B["radius"] >= 100_000 else (2048, 1024)
     P, LAT, LON = grid(W, H)
     n = Perlin(cfg["seed"])
     rng = np.random.default_rng(cfg["seed"])
     span = hm["deformity"]
-    h = 0.42 * span * fbm(n, P, (0.9, 0.9, 0.9), 3) + 0.08 * span * fbm(n, P, (6, 6, 6), 5)
     X = np.dstack(P)
-    for _ in range(45):                                        # cráteres
-        c = rng.normal(size=3)
-        c /= np.linalg.norm(c)
-        r = rng.uniform(0.05, 0.35) ** 1.5
-        d = np.arccos(np.clip(X @ c, -1, 1)) / r
-        depth = 0.18 * span * r ** 0.5
-        h += np.where(d < 1, -depth * (1 - d ** 2), 0) + np.where((d >= 1) & (d < 1.4),
-                                                                   0.25 * depth * (1 - (d - 1) / 0.4), 0)
+    h = (0.42 * span * fbm(n, P, (0.9, 0.9, 0.9), 3) + 0.08 * span * fbm(n, P, (6, 6, 6), 5)
+         + 0.012 * span * fbm(n, P, (40, 40, 40), 4, ridged=True))              # regolito y crestas finas
+    base = h.copy()
+    alb = np.zeros(h.shape, np.float32)
+    craters(h, alb, X, LAT, LON, rng, B["radius"], B["gee"], span)
     mask, paints = np.zeros(h.shape, bool), []
     if body in FEATURES:
         ctx = dict(P=P, LAT=LAT, LON=LON, X=X, span=span, n=n, rng=rng)
@@ -526,21 +612,29 @@ def small(body):
     h = np.clip(h, hm["offset"] + 1, hm["offset"] + span - 1)
     save(encode_height(h, body), body, "Height")
 
-    field = h + 0.05 * span * fbm(n, P, (12, 12, 12), 3)
-    col = posterize(field, cfg["pal"], [0.3, 0.45, 0.25])
+    # Albedo: tonos de la paleta según el terreno de fondo (no según los cráteres), más la edad de cada cráter
+    field = base + 0.05 * span * fbm(n, P, (12, 12, 12), 3)
+    col = ramp(field, cfg["pal"]) * np.clip(1 + alb + 0.22 * cavity(h), 0.5, 1.8)[..., None]
+    # Hielo y rasgos: bordes suaves y el relieve de debajo (sin colores planos recortados)
+    rel = np.clip(col.mean(axis=2, keepdims=True) / max(float(col.mean()), 1.0), 0.6, 1.4)
+    soft = lambda m: np.asarray(Image.fromarray((np.asarray(m, np.float32) * 255).astype(np.uint8))
+                                .filter(ImageFilter.GaussianBlur(1.5 * W / 2048)), np.float32)[..., None] / 255
     if cfg["ice"]:
-        ice = fbm(n, P, (4, 4, 4), 4) > 0.33
-        col = np.where(ice[..., None], hexrgb(cfg["ice"]), col)
+        a = soft(smooth(0.28, 0.38, fbm(n, P, (4, 4, 4), 4)))
+        col = col * (1 - 0.9 * a) + hexrgb(cfg["ice"]) * rel * (0.9 * a)
     for m, c in paints:
-        col = np.where(m[..., None], hexrgb(c), col)
-    save(col, body, "Color")
-    save(normal_map(h, S.BODIES[body]["radius"], 1.5), body, "Normal")
+        a = soft(m)
+        col = col * (1 - 0.85 * a) + hexrgb(c) * rel * (0.85 * a)
+    save(np.clip(col, 0, 255), body, "Color")
+    hs = downsample(h, W // 2048)
+    save(normal_map(hs, B["radius"], 1.5), body, "Normal")
 
     table = BIOMES.get(body, BIOMES["_pequeno"])
     q1, q2 = np.quantile(h, [0.3, 0.8])
     idx = np.select([h < q1, h < q2], [0, 1], 2)
     idx = np.where(mask, 3, idx)
-    save(biome_image(idx, list(table), table), body, "Biomes")
+    f = W // 1024
+    save(biome_image(idx[::f, ::f], list(table), table), body, "Biomes")
 
 
 # ------------------------------------------------------------------ rasgos únicos de los cuerpos menores
@@ -910,17 +1004,19 @@ def skolta():
     surf = np.where(sea2[..., None], surf, landc)
     polar = np.abs(LAT2) + 5 * fbm(n, P2, (3, 3, 3), 4) > 74
     surf = np.where(polar[..., None], hexrgb("#efe6cf"), surf)
+    surf = surf * np.clip(1 + 0.25 * cavity(h2), 0.6, 1.5)[..., None]    # crestas claras, valles y cauces oscuros
     save(surf, "Skolta", "Surface")
 
-    # Vista lejana: como Titán, bruma naranja con manchas borrosas. El mar, incoloro y profundo, se ve oscuro
-    # (#4A3E31) frente a las tierras claras, con el borde claro de los fondos someros; brilla (alfa) donde refleja
-    # a Kerbol. La bruma pesa un 58 % (antes 72 %: el mar casi no se distinguía).
+    # Vista lejana: como Titán, bruma naranja con manchas borrosas. El mar, incoloro y profundo, se ve casi negro
+    # (#3A3028, ficha "Color del mar") frente a las tierras claras, con el borde crema de los fondos someros
+    # (#D6CDB2); brilla (alfa) donde refleja a Kerbol. La bruma pesa un 40 % (antes 58 y 72 %: con EVE encima,
+    # el mar no se distinguía). generar_visuales.HAZE["Skolta"] debe valer lo mismo.
     haze = fbm(n, P2, (1.2, 1.2, 5.0), 5)
     hazecol = ramp(haze, ["#D68B52", "#C07A48", "#A86C3F"])
-    seen = np.where(sea2[..., None], np.where((depth < 150)[..., None], hexrgb("#C9BD9C"), hexrgb("#4A3E31")), surf)
+    seen = np.where(sea2[..., None], np.where((depth < 150)[..., None], hexrgb("#D6CDB2"), hexrgb("#3A3028")), surf)
     blur = np.asarray(Image.fromarray(seen.astype(np.uint8)).resize((W // 8, H // 8), Image.BILINEAR)
                       .resize((W // 2, H // 2), Image.BICUBIC), np.float32)
-    col = 0.58 * hazecol + 0.42 * blur
+    col = 0.40 * hazecol + 0.60 * blur
     col = np.where(polar[..., None], 0.5 * col + 0.5 * hexrgb("#efe6cf"), col)
     save(col, "Skolta", "Color", gloss=0.5 * (sea2 & ~polar))
     save(normal_map(haze * 4000.0, S.BODIES["Skolta"]["radius"], 1.0, detail=0.2), "Skolta", "Normal")
@@ -1007,6 +1103,14 @@ def termos():
     landc = np.where(cones[..., None], ramp(h2 + 300 * fbm(n, P2, (18, 18, 18), 3), ["#55493f", "#433a33", "#312a26"]), landc)
     flows = lava2 & ~sea2
     landc = np.where(flows[..., None], ramp(fbm(n, P2, (30, 30, 30), 2), ["#2e2a27", "#24211f", "#1b1918"]), landc)
+    # Textura del artista (arte/Termos_Textura.png): sustituye la base de roca; se conserva un 15 % de la
+    # geología anterior y, encima, los rasgos con bioma propio (orillas de sínter, pozos ácidos, volcanes activos).
+    # Los lagos mantienen sus colores de antes (petición del equipo).
+    art_path = ROOT / "arte" / "Termos_Textura.png"
+    art = (np.asarray(Image.open(art_path).convert("RGB").resize((W // 2, H // 2), Image.LANCZOS), np.float32)
+           if art_path.exists() else None)
+    if art is not None:
+        landc = 0.85 * art + 0.15 * landc
     landc = np.where((vents2 & ~sea2)[..., None], hexrgb("#d8582a"), landc)
     shore = ~sea2 & (h2 < 220) & _near(sea2, 7)
     sinter = shore & (fbm(n, P2, (7, 7, 7), 3) > -0.15)                 # terrazas de sílice de los géiseres
@@ -1025,17 +1129,23 @@ def termos():
           + 0.18 * smooth(45, 70, np.abs(LAT2)) - 0.10 * np.exp(-((np.abs(LAT2) - 30) / 10) ** 2))
     w2 = np.cos(np.radians(LAT2))
     cover = 0.92 * smooth(wquantile(cl, 0.45, w2), wquantile(cl, 0.82, w2), cl)   # ~35 % del cielo cubierto
-    seen = np.where(sea2[..., None], hexrgb("#4f9aa6"), surf)               # los lagos desde órbita
-    seen = np.asarray(Image.fromarray(seen.astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.5)), np.float32)
-    base = 0.74 * seen + 0.26 * hexrgb("#c4d0dc")
-    cloudc = ramp(cl, ["#f3f2ee", "#e4e5e4", "#cbced2"])
-    col = base * (1 - cover[..., None]) + cloudc * cover[..., None]
-    save(col, "Termos", "Color", gloss=GLOSS_SEA * sea2 * (1 - cover))
+    if art is not None:                     # la textura del artista ya trae su velo: sin nubes horneadas (las pone EVE)
+        lakes = 0.75 * hexrgb("#4f9aa6") + 0.25 * art                     # lagos turquesa, fundidos con la textura
+        seen = np.where(sea2[..., None], lakes, art)
+        col = np.asarray(Image.fromarray(seen.astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.5)), np.float32)
+        save(col, "Termos", "Color", gloss=GLOSS_SEA * sea2)
+    else:
+        seen = np.where(sea2[..., None], hexrgb("#4f9aa6"), surf)           # los lagos desde órbita
+        seen = np.asarray(Image.fromarray(seen.astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.5)), np.float32)
+        base = 0.74 * seen + 0.26 * hexrgb("#c4d0dc")
+        cloudc = ramp(cl, ["#f3f2ee", "#e4e5e4", "#cbced2"])
+        col = base * (1 - cover[..., None]) + cloudc * cover[..., None]
+        save(col, "Termos", "Color", gloss=GLOSS_SEA * sea2 * (1 - cover))
     clouds = np.zeros(cover.shape + (4,), np.uint8)
     clouds[..., :3] = hexrgb("#eeeeea").astype(np.uint8)
     clouds[..., 3] = (cover * 255).astype(np.uint8)
     save(Image.fromarray(clouds, "RGBA"), "Termos", "Clouds")          # nubes sueltas para EVE
-    save(normal_map(h2 * (1 - cover), S.BODIES["Termos"]["radius"], 1.0), "Termos", "Normal")
+    save(normal_map(h2 if art is not None else h2 * (1 - cover), S.BODIES["Termos"]["radius"], 1.0), "Termos", "Normal")
 
     names = list(BIOMES["Termos"])
     idx = np.select([acid2, (vents2 | volc2 | flows) & ~sea2, sea2, shore, mountains, hz2 > 0.5, clay],
