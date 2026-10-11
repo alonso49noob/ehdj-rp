@@ -62,7 +62,7 @@ BODIES = {
         system="Kraken", parent="Kraken", radius=650_000, gee=0.80, template="Eve",
         orbit=dict(a=58_000_000, e=0.02, i=1.2, lan=40, argpe=10, M0=1.7),
     ),
-    "Tenebris": dict(  # mundo oscuro a 5 °C con océanos de agua y colonia kerbal
+    "Tenebris": dict(  # mundo oscuro (basalto) a 5 °C con agua líquida: inhabitable, pero fácil de colonizar
         system="Kraken", parent="Kraken", radius=560_000, gee=0.85, template="Laythe",
         orbit=dict(a=76_000_000, e=0.015, i=0.8, lan=80, argpe=60, M0=3.1),
     ),
@@ -78,7 +78,7 @@ BODIES = {
         system="Kraken", parent="Salus", radius=35_000, gee=0.02, template="Gilly",
         orbit=dict(a=4_600_000, e=0.08, i=160, lan=50, argpe=0, M0=2.0),
     ),
-    "Lumen": dict(  # luna de hielo brillante de Tenebris: alumbra su cara nocturna eterna
+    "Lumen": dict(  # luna de hielo sucio de Tenebris: alumbra su cara nocturna eterna
         system="Kraken", parent="Tenebris", radius=90_000, gee=0.08, template="Minmus",
         orbit=dict(a=2_200_000, e=0.01, i=3, lan=0, argpe=0, M0=1.0),
     ),
@@ -141,8 +141,8 @@ ATMOS = {
     # Scarch: 90 % CO2 + 10 % CH4; estratosfera templada por la neblina orgánica
     "Scarch": dict(p0_atm=25.0, T0=323.0, M=0.0412, gamma=1.29, kappa=0.16,
                    T_tropo=200.0, T_top=240.0, p_top_atm=1e-6, iso_until_atm=None),
-    # Tenebris: 78 % N2, 18 % O2, 4 % CO2 (la vegetación negra produce oxígeno)
-    "Tenebris": dict(p0_atm=1.3, T0=278.0, M=0.0294, gamma=1.40, kappa=0.19,
+    # Tenebris: 80 % N2, 18 % CO2, 2 % Ar — sin oxígeno libre: irrespirable, pero suave (1.3 atm, 5 °C)
+    "Tenebris": dict(p0_atm=1.3, T0=278.0, M=0.0311, gamma=1.37, kappa=0.19,
                      T_tropo=210.0, T_top=250.0, p_top_atm=1e-6, iso_until_atm=None),
     # Salus: N2/CO2/H2O con trazas de H2 (la serpentinización lo hizo pasar por hiceano)
     "Salus": dict(p0_atm=2.0, T0=268.0, M=0.0291, gamma=1.39, kappa=0.19,

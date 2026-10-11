@@ -3,7 +3,7 @@
 Las reglas de formato y estilo son las mismas de [../TEXTURAS.md](../TEXTURAS.md): equirectangulares 2:1, color en DXT1, altura en R16 y biomas en PNG sin compresión.
 Todas existen ya como **provisionales**, en `GameData/MundosLejanos/PluginData/<Cuerpo>/`. Para sustituir una, guarda la versión final con el mismo nombre y ejecuta `python herramientas/validar_pack.py`.
 
-**Pintad pensando en la luz magenta.** En el juego todo se ve a través de `sunlightColor = 1, 0.62, 0.82`, así que los blancos salen rosados y los verdes se apagan. `docs/kraken/preview_kraken.png` simula esa luz.
+**Pintad pensando en la luz rojiza.** En el juego todo se ve a través de `sunlightColor = 1, 0.55, 0.48` con intensidad 0.35, así que los blancos salen color salmón y los verdes y azules se apagan. Evitad los azules saturados: bajo esta enana no hay luz azul que reflejar. `docs/kraken/preview_kraken.png` simula esa luz.
 
 **Vista lejana y terreno van por separado** en los tres mundos con atmósfera gruesa (Scarch, Tenebris y Salus):
 - `_Color` es lo que se ve desde órbita, con neblina o nubes horneadas.
@@ -17,8 +17,8 @@ Estado: ⭐ prioridad para el arte final.
 |---|---|---|---|---|
 | ⭐ | `Kraken/Kraken_Bands.png` | `ScaledVersion › Material › sunspotTex` | 4096×2048, gris | **Aspecto de enana T**: zonas claras (blanco) y cinturones oscuros, con bordes turbulentos y unos 9 huecos ovales en las nubes. El shader lo tiñe entre `emitColor0` #4d0a1f y `emitColor1` #8c1a3d, con los cinturones hacia #140309 |
 | | `Kraken/Kraken_Noise.png` | `noiseMap` | 1024×512 RGB | Turbulencia fina estirada en latitud; cada canal en una escala distinta |
-| ⭐ | `Kraken/Kraken_DiskInner.png` | `Rings › Ring` (1º) | 2048×16 RGBA | Disco interior caliente: polvo anaranjado `#e07a3a`, fino y brillante |
-| ⭐ | `Kraken/Kraken_Disk.png` | `Rings › Ring` (2º) | 2048×16 RGBA | **Disco protoplanetario**: rosa malva `#d09ab8`, opaco (alfa hasta 0.85), con cúmulos y dos huecos (x = 0.40, órbita de Ignea, y x = 0.72) |
+| ⭐ | `Kraken/Kraken_DiskInner.png` | `Rings › Ring` (1º) | 2048×16 RGBA | Disco interior caliente: polvo anaranjado `#b8643a`, fino |
+| ⭐ | `Kraken/Kraken_Disk.png` | `Rings › Ring` (2º) | 2048×16 RGBA | **Disco protoplanetario**: pardo rosado `#8c6a62`, opaco (alfa hasta 0.75), con cúmulos y dos huecos (x = 0.40, órbita de Ignea, y x = 0.72) |
 | | `Kraken/Kraken_DarkBelt.png` | `Rings › Ring` (3º) | 2048×16 RGBA | Polvo del Cinturón Oscuro: `#20181c` con alfa ≤ 0.3, **apenas visible** |
 
 En las tiras, **u = 0 es el borde exterior** y u = 1 el interior. Los discos no tienen luz propia: el color se ve tal cual.
@@ -45,8 +45,8 @@ En las tiras, **u = 0 es el borde exterior** y u = 1 el interior. Los discos no 
 
 | ⭐ | Archivo | Final | Contenido |
 |---|---|---|---|
-| ⭐ | `Tenebris_Color.png` | 4096×2048 DXT1 | Terreno oscuro más un 30 % de nubes grises (`#6e727c`, `#9a9ea8`) |
-| ⭐ | `Tenebris_Surface.png` | 4096×2048 DXT1 | **Bosques negros** (`#20241d` a `#121512`), basalto `#2c2c32` y `#3a3a42` en las tierras altas, playas oscuras `#3a3632`, fondo marino `#0c121c`, casquetes `#c8ccd4`. La **colonia** (12° N 35° E) es una meseta gris `#5a5a60` con luces `#ffd890`; el **cráter de la máquina** (18° S 140° E), `#2a1a18` con óxido `#5a3020` |
+| ⭐ | `Tenebris_Color.png` | 4096×2048 DXT1 | Terreno oscuro más un 30 % de nubes grises (`#706c6a`, `#9c9894`) |
+| ⭐ | `Tenebris_Surface.png` | 4096×2048 DXT1 | **Sin vegetación**: llanuras de basalto (`#2a2724` a `#181716`), tierras altas `#2c2c32` y `#3a3a42`, playas oscuras `#3a3632`, fondo marino `#0e1114`, casquetes `#c8c8c8`. La **colonia** (12° N 35° E) es una meseta gris `#5a5a60` con luces `#ffd890`; el **cráter de la máquina** (18° S 140° E), `#2a1a18` con óxido `#5a3020` |
 | ⭐ | `Tenebris_Height.png` | 8192×4096 R16 | `h = −4000 + gris × 8000`. Un 35 % de tierra. **La meseta de la colonia, a +320 m, debe quedar plana** porque la plataforma de Kerbal Konstructs va encima |
 | | `Tenebris_Normal.png`, `Tenebris_Biomes.png` | 2048×1024 | 6 biomas (Restos de la Máquina ×2.5) |
 | | `Tenebris_Clouds.png` *(v2)* | 4096×2048 DXT5 | Capa de nubes EVE |
@@ -55,7 +55,7 @@ En las tiras, **u = 0 es el borde exterior** y u = 1 el interior. Los discos no 
 
 | ⭐ | Archivo | Final | Contenido |
 |---|---|---|---|
-| ⭐ | `Salus_Color.png` | 4096×2048 DXT1 | Océano azul verdoso (`#1e4a5a` a `#0f2a33`), aguas someras turquesa `#7aa8a8`, islas de sal `#d8d0c0`, hielo salobre polar `#dfe8ee` y un 25 % de nubes |
+| ⭐ | `Salus_Color.png` | 4096×2048 DXT1 | Océano gris verdoso (`#244648` a `#13292a`), aguas someras `#8aa49a`, islas de sal `#d8d0c0`, hielo salobre polar `#e0e2de` y un 25 % de nubes |
 | ⭐ | `Salus_Surface.png` | 4096×2048 DXT1 | Lo mismo sin nubes ni hielo: lecho marino, plataformas someras e islas (sal `#d8d0c0`, roca `#4a4440` en las laderas) |
 | ⭐ | `Salus_Height.png` | 8192×4096 R16 | `h = −2500 + gris × 3600`; **nivel del mar en gris 0.694**. Exactamente un 3 % de tierra: arcos de islas en los bordes de 4 cuencas de impacto |
 | | `Salus_Normal.png`, `Salus_Biomes.png` | 2048×1024 | 5 biomas |
@@ -68,7 +68,7 @@ Todas a 1024×512, con color, normal, altura y biomas (Depresiones, Llanuras, Cr
 |---|---|---|
 | **Vestigia** (luna de Salus) | −1200 / 3600 | Basalto vitrificado gris (`#807a74`, `#6a6460`, `#57524e`) con cráteres |
 | **Nox** (luna de Salus) | −3000 / 6000 | Casi negra (`#141416` a `#09090a`), forma irregular |
-| **Lumen** (luna de Tenebris) | −2000 / 5000 | Hielo brillante (`#f6f4fa`, `#e4e1ec`, `#cdc8da`): pintar en blanco frío, la luz de Kraken ya la tiñe |
+| **Lumen** (luna de Tenebris) | −2000 / 5000 | Hielo sucio de polvo (`#9c9894`, `#86827e`, `#6e6a68`); solo el casquete sur es nieve limpia `#cfccc8` |
 | **Ignea** (2048×1024) | −500 / 1200 | Costra negra (`#4a2a20` a `#2a1a16`), **grietas incandescentes** `#f0b040`, mar de magma `#e0602a` con piel `#8a3018`. El brillo debe ir pintado |
 | **Fuligo** | −2500 / 6000 | `#1a1a1d` a `#0e0e10`, con cráteres frescos `#3a3a40` (lo único visible) |
 | **Caligo** | −2500 / 6000 | `#19171a` a `#0c0b0d` |

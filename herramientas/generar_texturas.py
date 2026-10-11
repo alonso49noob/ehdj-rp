@@ -24,7 +24,7 @@ HEIGHTMAPS = {
     "Halum":   dict(offset=-3500, deformity=4500),
     "Ocrea":   dict(offset=-1000, deformity=3600),
     "Pastora": dict(offset=-3000, deformity=6000),
-    "Prima":   dict(offset=-5000, deformity=10000),
+    "Prima":   dict(offset=-8000, deformity=16000),     # binario de contacto
     "Secunda": dict(offset=-4000, deformity=8000),
     "Heraldo": dict(offset=-1500, deformity=3000),
     # sistema Kraken
@@ -37,7 +37,7 @@ HEIGHTMAPS = {
     "Lumen":    dict(offset=-2000, deformity=5000),
     "Fuligo":   dict(offset=-2500, deformity=6000),
     "Caligo":   dict(offset=-2500, deformity=6000),
-    "Atra":     dict(offset=-3000, deformity=7000),
+    "Atra":     dict(offset=-20000, deformity=40000),   # puro 3:1
     "Azabache": dict(offset=-3000, deformity=6000),
     "Brea":     dict(offset=-2500, deformity=5000),
     "Tizne":    dict(offset=-2000, deformity=4000),
@@ -72,7 +72,7 @@ BIOMES = {
     "Scarch": {"Mar Acido": "#6a8a2a", "Tierras Grises": "#a08070", "Mesetas Rojizas": "#d06040",
                "Campos de Lava": "#ff8800", "Neveros Organicos": "#f0d090",
                "Campos de Extraccion": "#d02020"},
-    "Tenebris": {"Oceano Oscuro": "#203060", "Bosques Negros": "#305030",
+    "Tenebris": {"Oceano Oscuro": "#203060", "Llanuras de Basalto": "#5a4a3a",
                  "Tierras Altas de Basalto": "#707080", "Casquetes Polares": "#f0f0f0",
                  "Asentamiento Kerbal": "#40c0ff", "Restos de la Maquina": "#d02020"},
     "Salus": {"Oceano Salino": "#2080a0", "Fosas de Impacto": "#103050", "Arcos de Islas": "#c0a060",
@@ -169,7 +169,15 @@ def normal_map(h, radius, strength):
     fade = smooth(84, 72, np.abs(lat_deg))[:, None]           # 1 lejos de los polos, 0 en el polo
     n = np.dstack([-gx * strength * fade, -gy * strength * fade, np.ones_like(h)])
     n /= np.linalg.norm(n, axis=2, keepdims=True)
-    return ((n * 0.5 + 0.5) * 255).astype(np.uint8)
+    return swizzle_dxt5nm(((n * 0.5 + 0.5) * 255).astype(np.uint8))
+
+
+def swizzle_dxt5nm(rgb):
+    """Formato de normales de los shaders de KSP (DXT5nm): X en ALFA, Y en verde, Z se reconstruye.
+    Rojo = 255 para que también valga el decodificador 'RGorAG' de Unity (x = r · a).
+    Un PNG RGB normal se leería con alfa = 1 → X = +1 en todo el planeta: luz torcida y cuñas en los polos."""
+    x, y = rgb[..., 0], rgb[..., 1]
+    return np.dstack([np.full_like(x, 255), y, y, x])
 
 
 def biome_image(index, names, table):
@@ -378,7 +386,7 @@ SMALL = {
     "Heraldo": dict(seed=54, pal=["#3a3430", "#2a2624", "#1c1918"], ice="#c8d4dc"),
     "Vestigia": dict(seed=55, pal=["#807a74", "#6a6460", "#57524e"], ice=None),
     "Nox":      dict(seed=56, pal=["#141416", "#0e0e10", "#09090a"], ice=None),
-    "Lumen":    dict(seed=57, pal=["#f6f4fa", "#e4e1ec", "#cdc8da"], ice=None),
+    "Lumen":    dict(seed=57, pal=["#9c9894", "#86827e", "#6e6a68"], ice=None),
     # Cinturón Oscuro: albedo 0.01–0.02, solo se distinguen por el matiz
     "Fuligo":   dict(seed=58, pal=["#1a1a1d", "#141416", "#0e0e10"], ice="#3a3a40"),
     "Caligo":   dict(seed=59, pal=["#19171a", "#121114", "#0c0b0d"], ice=None),
@@ -392,6 +400,7 @@ SMALL = {
 
 
 def small(body):
+    """Cuerpo menor: patata con cráteres + un rasgo único (FEATURES) con su propio bioma."""
     cfg, hm = SMALL[body], HEIGHTMAPS[body]
     W, H = 1024, 512
     P, LAT, LON = grid(W, H)
@@ -408,7 +417,15 @@ def small(body):
         depth = 0.18 * span * r ** 0.5
         h += np.where(d < 1, -depth * (1 - d ** 2), 0) + np.where((d >= 1) & (d < 1.4),
                                                                    0.25 * depth * (1 - (d - 1) / 0.4), 0)
-    h = h - np.median(h) + hm["offset"] + 0.5 * span
+    mask, paints = np.zeros(h.shape, bool), []
+    if body in FEATURES:
+        ctx = dict(P=P, LAT=LAT, LON=LON, X=X, span=span, n=n, rng=rng)
+        h, mask, paints = FEATURES[body](h, ctx)
+    lo, hi = np.quantile(h, [0.0005, 0.9995])
+    if hi - lo > 0.96 * span:                                  # formas extremas: reescalar, no recortar
+        h = (h - lo) / (hi - lo) * 0.96 * span + hm["offset"] + 0.02 * span
+    else:
+        h = h - np.median(h) + hm["offset"] + 0.5 * span
     h = np.clip(h, hm["offset"] + 1, hm["offset"] + span - 1)
     save(encode_height(h, body), body, "Height")
 
@@ -417,13 +434,168 @@ def small(body):
     if cfg["ice"]:
         ice = fbm(n, P, (4, 4, 4), 4) > 0.33
         col = np.where(ice[..., None], hexrgb(cfg["ice"]), col)
+    for m, c in paints:
+        col = np.where(m[..., None], hexrgb(c), col)
     save(col, body, "Color")
     save(normal_map(h, S.BODIES[body]["radius"], 1.5), body, "Normal")
 
-    names = list(BIOMES["_pequeno"])
+    table = BIOMES.get(body, BIOMES["_pequeno"])
     q1, q2 = np.quantile(h, [0.3, 0.8])
     idx = np.select([h < q1, h < q2], [0, 1], 2)
-    save(biome_image(idx, names, BIOMES["_pequeno"]), body, "Biomes")
+    idx = np.where(mask, 3, idx)
+    save(biome_image(idx, list(table), table), body, "Biomes")
+
+
+# ------------------------------------------------------------------ rasgos únicos de los cuerpos menores
+# Cada función recibe la altura base y devuelve (altura, zona del bioma especial, [(zona, color), ...]).
+def _f_pastora(h, c):      # cresta ecuatorial de polvo del anillo (como Pan y Atlas): forma de nuez
+    ridge = np.exp(-(c["LAT"] / 9) ** 2)
+    h = h * (1 - 0.6 * ridge) + 0.55 * c["span"] * ridge
+    return h, np.abs(c["LAT"]) < 7, [(np.abs(c["LAT"]) < 10, "#6a6a70")]
+
+
+def _f_prima(h, c):        # binario de contacto (como Arrokoth): dos lóbulos y un cuello brillante
+    x = c["P"][0]
+    h = h * 0.5 + c["span"] * (0.45 * x ** 2 - 0.38 * np.exp(-(x / 0.22) ** 2) + 0.08 * x)
+    neck = np.abs(x) < 0.16
+    return h, neck, [(neck, "#cdbba3")]
+
+
+def _f_secunda(h, c):      # acantilado de 3.6 km (como Verona Rupes) y coronas ovaladas
+    dl = c["LON"] - 40 + 3 * np.sin(np.radians(c["LAT"]) * 6)
+    # bloque hundido entre 40° (acantilado brusco) y 80–110° E (rampa suave): sin escalón en la costura ±180°
+    h = h - 0.45 * c["span"] * smooth(-0.8, 0.8, dl) * smooth(110, 80, c["LON"]) * smooth(36, 26, np.abs(c["LAT"]))
+    cliff = (np.abs(dl) < 1.6) & (np.abs(c["LAT"]) < 32)
+    cc = unit(-10, 130)
+    u, v = tangent_uv(c["X"], cc, 1.0)
+    r = np.hypot(u / 0.45, v / 0.28)
+    inside = (r < 1) & (c["X"] @ cc > 0)
+    h = h + np.where(inside, 0.05 * c["span"] * np.sin(r * 28), 0)
+    grooves = inside & (np.sin(r * 28) > 0.3)
+    return h, cliff, [(grooves, "#aab8c2"), (cliff, "#eef3f6")]
+
+
+def _f_heraldo(h, c):      # pozos activos con hielo fresco (como el cometa 67P)
+    mask = np.zeros(h.shape, bool)
+    for _ in range(6):
+        cc, r = random_unit(c["rng"]), c["rng"].uniform(0.05, 0.09)
+        d = angdist(c["X"], cc) / r
+        h = h - 0.3 * c["span"] * smooth(1.0, 0.75, d)
+        mask |= d < 1.05
+    return h, mask, [(mask, "#c8d4dc")]
+
+
+def _f_vestigia(h, c):     # cuenca multianillo del impacto (como Mare Orientale)
+    d = angdist(c["X"], unit(10, 0)) / 0.9
+    h = h - 0.3 * c["span"] * smooth(1.0, 0.3, d)
+    rings = np.zeros(h.shape, bool)
+    for rr in (0.45, 0.7, 0.95):
+        h = h + 0.08 * c["span"] * np.exp(-((d - rr) / 0.03) ** 2)
+        rings |= np.abs(d - rr) < 0.035
+    return h, d < 1, [(d < 0.45, "#3a3836"), (rings, "#9a948e")]
+
+
+def _f_nox(h, c):          # cráter gigante y surcos paralelos (como Stickney en Fobos)
+    cc, r = unit(-5, 60), 0.55
+    h = h + crater(c["X"], cc, r, 0.45 * c["span"])
+    grooves = np.abs(np.sin((c["X"] @ unit(30, -40)) * 70)) > 0.93
+    h = h - 0.03 * c["span"] * grooves
+    big = angdist(c["X"], cc) / r < 1
+    return h, big, [(big, "#1d1d21"), (grooves, "#222226")]
+
+
+def _f_lumen(h, c):        # franjas de tigre en el polo sur (como Encélado): la única nieve limpia de una luna sucia
+    a = np.radians(30)
+    s = c["P"][0] * np.cos(a) + c["P"][1] * np.sin(a)
+    t = -c["P"][0] * np.sin(a) + c["P"][1] * np.cos(a)
+    south = c["LAT"] < -55
+    stripes = (c["LAT"] < -60) & (np.abs(np.sin(s * np.pi * 7)) < 0.1) & (np.abs(t) < 0.35)
+    h = h - 0.08 * c["span"] * stripes
+    return h, south, [(south, "#cfccc8"), (stripes, "#6a8894")]
+
+
+def _f_fuligo(h, c):       # el Ojo: cráter con sales brillantes (como Occator en Ceres)
+    cc = unit(18, -30)
+    h = h + crater(c["X"], cc, 0.22, 0.3 * c["span"])
+    d = angdist(c["X"], cc) / 0.22
+    faculae = (d < 0.4) | ((d < 0.85) & (fbm(c["n"], c["P"], (30, 30, 30), 2) > 0.2))
+    return h, d < 1.1, [(faculae, "#e8e4dc")]
+
+
+def _f_caligo(h, c):       # catena: cadena de 12 cráteres de un impactor partido por las mareas
+    a, b = unit(20, -60), unit(-10, 40)
+    mask = np.zeros(h.shape, bool)
+    for k in range(12):
+        v = a * (1 - k / 11) + b * (k / 11)
+        v /= np.linalg.norm(v)
+        r = 0.035 + 0.01 * np.sin(k * 1.7)
+        h = h + crater(c["X"], v, r, 0.12 * c["span"])
+        mask |= angdist(c["X"], v) / r < 1.2
+    return h, mask, [(mask, "#24222a")]
+
+
+def _f_atra(h, c):         # puro 3:1 (como Oumuamua): un intruso interestelar capturado por el cinturón
+    x = c["P"][0]
+    h = h * 0.4 + c["span"] * (0.75 * x ** 2 - 0.25)
+    tips = np.abs(x) > 0.85
+    return h, tips, [(tips, "#2a1c1a")]
+
+
+def _f_azabache(h, c):     # facetas de carbono vítreo
+    step = 0.07 * c["span"]
+    h = np.round(h / step) * step
+    edge = (np.abs(np.gradient(h, axis=0)) + np.abs(np.gradient(h, axis=1))) > 0
+    return h, edge, [(edge, "#3c4658")]
+
+
+def _f_brea(h, c):         # blob liso de orgánicos con charcos planos
+    h = 0.35 * c["span"] * fbm(c["n"], c["P"], (0.8, 0.8, 0.8), 2)
+    q = np.quantile(h, 0.2)
+    pools = h < q
+    return np.where(pools, q, h), pools, [(pools, "#0b0908")]
+
+
+def _f_tizne(h, c):        # montón de escombros cubierto de bloques
+    mask = np.zeros(h.shape, bool)
+    for _ in range(60):
+        cc, r = random_unit(c["rng"]), c["rng"].uniform(0.02, 0.06)
+        d = angdist(c["X"], cc) / r
+        h = h + np.where(d < 1, 0.12 * c["span"] * (1 - d ** 2), 0)
+        mask |= d < 1
+    return h, mask, [(mask, "#222222")]
+
+
+def _f_escoria(h, c):      # escoria vesicular: cientos de pozos de gas
+    mask = np.zeros(h.shape, bool)
+    for _ in range(140):
+        cc, r = random_unit(c["rng"]), c["rng"].uniform(0.015, 0.05)
+        d = angdist(c["X"], cc) / r
+        h = h - np.where(d < 1, 0.15 * c["span"] * (1 - d ** 4), 0)
+        mask |= d < 0.9
+    return h, mask, [(mask, "#2a1a12")]
+
+
+def _f_hollin(h, c):       # la baliza: plataforma nivelada por las máquinas (0°, 0°)
+    d = angdist(c["X"], unit(0, 0)) / 0.15
+    w = smooth(0.7, 1.0, d)
+    h = h * w + np.median(h) * (1 - w)
+    return h, d < 0.8, [(d < 0.25, "#3a3a40")]
+
+
+FEATURES = {"Pastora": _f_pastora, "Prima": _f_prima, "Secunda": _f_secunda, "Heraldo": _f_heraldo,
+            "Vestigia": _f_vestigia, "Nox": _f_nox, "Lumen": _f_lumen, "Fuligo": _f_fuligo,
+            "Caligo": _f_caligo, "Atra": _f_atra, "Azabache": _f_azabache, "Brea": _f_brea,
+            "Tizne": _f_tizne, "Escoria": _f_escoria, "Hollin": _f_hollin}
+FEATURE_BIOMES = {"Pastora": ("Cresta Ecuatorial", "#e070e0"), "Prima": ("Cuello Brillante", "#f0e0c0"),
+                  "Secunda": ("Acantilado Verona", "#40e0ff"), "Heraldo": ("Pozos Activos", "#ffffff"),
+                  "Vestigia": ("Cuenca Multianillo", "#c04040"), "Nox": ("Gran Crater", "#a060ff"),
+                  "Lumen": ("Franjas de Tigre", "#40a0ff"), "Fuligo": ("Ojo de Fuligo", "#ffff80"),
+                  "Caligo": ("Catena", "#ff8040"), "Atra": ("Extremos", "#ff4080"),
+                  "Azabache": ("Facetas Vitreas", "#80c0ff"), "Brea": ("Charcos de Brea", "#806040"),
+                  "Tizne": ("Campos de Bloques", "#a0a0a0"), "Escoria": ("Vesiculas", "#c06030"),
+                  "Hollin": ("Baliza", "#ff2020")}
+for _b, (_name, _col) in FEATURE_BIOMES.items():
+    BIOMES[_b] = {**BIOMES["_pequeno"], _name: _col}
 
 
 # ================================================================== sistema Kraken
@@ -577,7 +749,8 @@ def scarch():
 
 
 def tenebris():
-    """Mundo oscuro: océanos negros, bosques negros, basalto, colonia kerbal y restos de una máquina."""
+    """Mundo oscuro e inhabitable: llanuras de basalto y arena volcánica, océanos negros, colonia en cúpulas
+    y restos de una máquina. El albedo bajo es mineral (basalto rico en hierro), no vegetal."""
     W, H = 4096, 2048
     P, LAT, LON = grid(W, H)
     X = np.dstack(P)
@@ -601,13 +774,13 @@ def tenebris():
     X2 = np.dstack(P2)
     dc2, dw2 = angdist(X2, cc), angdist(X2, cw)
     land = h2 >= 0
-    veg = posterize(h2 + 200 * fbm(n, P2, (12, 12, 12), 3), ["#20241d", "#191d17", "#121512"], [0.3, 0.4, 0.3])
-    surf = np.where(land[..., None], veg, posterize(h2, ["#141c28", "#0c121c"], [0.5, 0.5]))
+    basalt = posterize(h2 + 200 * fbm(n, P2, (12, 12, 12), 3), ["#2a2724", "#211f1d", "#181716"], [0.3, 0.4, 0.3])
+    surf = np.where(land[..., None], basalt, posterize(h2, ["#161a1e", "#0e1114"], [0.5, 0.5]))
     high = land & (h2 > 1300)
     surf = np.where(high[..., None], np.where((h2 > 2300)[..., None], hexrgb("#3a3a42"), hexrgb("#2c2c32")), surf)
     surf = np.where((land & (h2 < 40))[..., None], hexrgb("#3a3632"), surf)
     polar = np.abs(LAT2) + 25 * fbm(n, P2, (3, 3, 3), 4) > 72     # borde polar irregular
-    surf = np.where(polar[..., None], hexrgb("#c8ccd4"), surf)
+    surf = np.where(polar[..., None], hexrgb("#c8c8c8"), surf)
     colony = dc2 < 0.03
     lights = colony & (dc2 < 0.012) & (fbm(n, P2, (400, 400, 400), 1) > 0.2)
     surf = np.where(colony[..., None], hexrgb("#5a5a60"), surf)
@@ -618,13 +791,16 @@ def tenebris():
 
     cl = fbm(n, P2, (1.5, 1.5, 5.0), 6)
     t1, t2 = np.quantile(cl, 0.70), np.quantile(cl, 0.82)
-    scaled = np.where((cl > t2)[..., None], hexrgb("#9a9ea8"), np.where((cl > t1)[..., None], hexrgb("#6e727c"), surf))
+    scaled = np.where((cl > t2)[..., None], hexrgb("#9c9894"), np.where((cl > t1)[..., None], hexrgb("#706c6a"), surf))
     save(scaled, "Tenebris", "Color")
     save(normal_map(h2, S.BODIES["Tenebris"]["radius"], 2.0), "Tenebris", "Normal")
 
     names = list(BIOMES["Tenebris"])
     idx = np.select([colony, wreck, polar, ~land, high], [4, 5, 3, 0, 2], 1)
     save(biome_image(idx[::2, ::2], names, BIOMES["Tenebris"]), "Tenebris", "Biomes")
+
+
+SALUS_ICE = "#e0e2de"                                          # hielo salobre polar (EVE lo distingue de las nubes)
 
 
 def salus():
@@ -651,8 +827,8 @@ def salus():
     land = h2 >= 0
     shallow = (h2 < 0) & (h2 > -150)
     slope = np.abs(np.gradient(h2, axis=0)) + np.abs(np.gradient(h2, axis=1))
-    surf = posterize(h2, ["#1e4a5a", "#163a44", "#0f2a33"], [0.3, 0.4, 0.3])
-    surf = np.where(shallow[..., None], hexrgb("#7aa8a8"), surf)
+    surf = posterize(h2, ["#244648", "#1a3739", "#13292a"], [0.3, 0.4, 0.3])
+    surf = np.where(shallow[..., None], hexrgb("#8aa49a"), surf)
     isl = np.where((slope > np.quantile(slope[land], 0.7))[..., None], hexrgb("#4a4440"), hexrgb("#d8d0c0"))
     surf = np.where(land[..., None], isl, surf)
     save(surf, "Salus", "Surface")
@@ -660,8 +836,8 @@ def salus():
     polar = np.abs(LAT2) + 25 * fbm(n, P2, (3, 3, 3), 4) > 70     # hielo salobre de borde irregular
     cl = fbm(n, P2, (1.6, 1.6, 5.0), 6)
     t1, t2 = np.quantile(cl, 0.75), np.quantile(cl, 0.85)
-    scaled = np.where(polar[..., None], hexrgb("#dfe8ee"), surf)
-    scaled = np.where((cl > t2)[..., None], hexrgb("#e6eef2"), np.where((cl > t1)[..., None], hexrgb("#a8c0c8"), scaled))
+    scaled = np.where(polar[..., None], hexrgb(SALUS_ICE), surf)
+    scaled = np.where((cl > t2)[..., None], hexrgb("#e8e8e4"), np.where((cl > t1)[..., None], hexrgb("#b4bab6"), scaled))
     save(scaled, "Salus", "Color")
     save(normal_map(h2, S.BODIES["Salus"]["radius"], 2.0), "Salus", "Normal")
 
@@ -710,16 +886,16 @@ def kraken():
     x = 1 - u                                                  # 0 interior … 1 exterior
     edges = lambda a, b: smooth(0.0, a, x) * smooth(1.0, 1 - b, x)
     # Interior caliente (36 000–50 000 km): polvo anaranjado, fino y brillante
-    a = 0.6 * edges(0.1, 0.15) * (0.75 + 0.25 * np.sin(x * 47) ** 2)
-    save(disk_strip(a, "#e07a3a"), "Kraken", "DiskInner")
-    # Protoplanetario (150 000–400 000 km): rosa malva, opaco, con cúmulos y dos huecos
-    a = 0.85 * edges(0.05, 0.12) * (0.6 + 0.4 * np.abs(np.sin(x * 37) * np.sin(x * 11 + 1)))
+    a = 0.5 * edges(0.1, 0.15) * (0.75 + 0.25 * np.sin(x * 47) ** 2)
+    save(disk_strip(a, "#b8643a"), "Kraken", "DiskInner")
+    # Protoplanetario (150 000–400 000 km): pardo rosado, opaco, con cúmulos y dos huecos
+    a = 0.75 * edges(0.05, 0.12) * (0.6 + 0.4 * np.abs(np.sin(x * 37) * np.sin(x * 11 + 1)))
     for g, wd in ((0.40, 0.02), (0.72, 0.012)):               # hueco de Ignea (250 000 km) y otro embrión
         a *= 1 - 0.9 * np.exp(-((x - g) / wd) ** 2)
-    save(disk_strip(a, "#d09ab8"), "Kraken", "Disk")
+    save(disk_strip(a, "#8c6a62"), "Kraken", "Disk")
     # Cinturón Oscuro (450 000–820 000 km): polvo casi negro, apenas visible
     a = 0.28 * edges(0.15, 0.2) * (0.7 + 0.3 * np.sin(x * 23) ** 2)
-    save(disk_strip(a, "#20181c"), "Kraken", "DarkBelt")
+    save(disk_strip(a, "#1e1816"), "Kraken", "DarkBelt")
 
     # Superficie de enana T para el shader de estrella (sunspotTex = bandas, noiseMap = turbulencia).
     # Las enanas T son gigantes gaseosos incandescentes: zonas claras y cinturones oscuros de nubes

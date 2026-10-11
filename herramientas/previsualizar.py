@@ -136,20 +136,20 @@ def kraken_star(r):
     lat, lon = np.arcsin(np.clip(yw, -1, 1)), np.arctan2(x, zw)
     H, W = bands.shape
     b = bands[np.clip(((0.5 - lat / np.pi) * H).astype(int), 0, H - 1), ((lon / (2 * np.pi) + 0.5) * W).astype(int) % W]
-    c0, c1 = np.array([0.30, 0.04, 0.12]) * 255, np.array([0.55, 0.10, 0.24]) * 255
-    spot = np.array([0.08, 0.01, 0.04]) * 255
+    c0, c1 = np.array([0.17, 0.04, 0.05]) * 255, np.array([0.34, 0.08, 0.09]) * 255
+    spot = np.array([0.05, 0.01, 0.012]) * 255
     col = c0 + (c1 - c0) * b[..., None]
     col = col * b[..., None] ** 0.4 + spot * (1 - b[..., None] ** 0.4)                # cinturones oscuros
     col = col * (0.55 + 0.45 * z[..., None])                                           # oscurecimiento de borde
     halo = np.clip(1 - (d - 1) / 0.25, 0, 1) ** 2.5 * (d > 1)
     out = np.zeros((size, size, 4), np.float32)
-    out[..., :3] = np.where(inside[..., None], col, np.array([102, 15, 46], np.float32))
+    out[..., :3] = np.where(inside[..., None], col, np.array([61, 13, 13], np.float32))
     out[..., 3] = np.where(inside, 255, halo * 140)
     return Image.fromarray(out.clip(0, 255).astype(np.uint8), "RGBA")
 
 
 def kraken_preview():
-    """Sistema Kraken: la enana y sus mundos a escala entre sí (planetas aparte, iluminados en magenta)."""
+    """Sistema Kraken: la enana y sus mundos a escala entre sí (planetas aparte, con la luz rojiza de la enana)."""
     W, H = 1600, 900
     canvas = Image.new("RGBA", (W, H), (0, 0, 0, 255))
     star = kraken_star(330)
@@ -157,10 +157,10 @@ def kraken_preview():
     f = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 22)
     fs = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 18)
     d = ImageDraw.Draw(canvas)
-    d.text((40, H - 60), "Kraken  6 300 km (T2, 1 250 K)", font=f, fill=(235, 190, 210))
-    light = (1.0, 0.50, 0.66)                                    # sunlightColor de Kraken
+    d.text((40, H - 60), "Kraken  6 300 km (T2, 1 250 K)", font=f, fill=(220, 170, 160))
+    light = (1.0, 0.55, 0.48)                                    # sunlightColor de Kraken
     scale = 110 / S.BODIES["Salus"]["radius"]                   # Salus = 110 px
-    glows = {"Scarch": (170, 120, 110), "Tenebris": (120, 110, 140), "Salus": (150, 190, 205)}
+    glows = {"Scarch": (170, 120, 110), "Tenebris": (115, 100, 95), "Salus": (140, 152, 146)}
     for b, x in zip(["Krax", "Scarch", "Tenebris", "Salus", "Ignea"], [560, 760, 960, 1200, 1430]):
         r = max(int(S.BODIES[b]["radius"] * scale), 6)
         im = sphere(load(b, "Color"), r, spin=20, glow=glows.get(b), light=light)

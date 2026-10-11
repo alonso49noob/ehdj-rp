@@ -14,7 +14,7 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 import sistema as S
-from generar_texturas import HEIGHTMAPS
+from generar_texturas import HEIGHTMAPS, SALUS_ICE, hexrgb
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GD_TEX = ROOT / "GameData" / S.PACK / "PluginData"
@@ -33,18 +33,18 @@ SCATTERER = {
     "Scarch": dict(sun="Kraken", flat=False, load=3e8, unload=5e8, start=1, HR=8, HM=6,
                    betaR=(0.0450, 0.0260, 0.0120), mie=0.0300, mieG=0.75, ozone=False, eclipse=[]),
     "Tenebris": dict(sun="Kraken", flat=True, load=3e8, unload=5e8, start=1, HR=6, HM=1.5,
-                     betaR=(0.0200, 0.0465, 0.1140), mie=0.0158, mieG=0.85, ozone=True, eclipse=["Lumen"]),
+                     betaR=(0.0200, 0.0400, 0.0800), mie=0.0158, mieG=0.85, ozone=False, eclipse=["Lumen"]),
     "Salus": dict(sun="Kraken", flat=True, load=3e8, unload=5e8, start=1, HR=5.5, HM=1.5,
-                  betaR=(0.0250, 0.0500, 0.1000), mie=0.0200, mieG=0.85, ozone=False, eclipse=["Vestigia", "Nox"]),
+                  betaR=(0.0250, 0.0450, 0.0750), mie=0.0200, mieG=0.85, ozone=False, eclipse=["Vestigia", "Nox"]),
 }
 OCEANS = {  # upwelling = color del agua profunda; underwater = niebla submarina
     "Halum": dict(wind=4, amp=0.6, up=(0.004, 0.008, 0.020), under=(0.35, 0.50, 0.72), clear=120, n=1.09,
                   caps=0.1, foam=0.6),     # neón líquido: transparente, n = 1.09, mar en calma
     "Scarch": dict(wind=10, amp=1.0, up=(0.012, 0.010, 0.004), under=(0.30, 0.28, 0.14), clear=15, n=1.34,
                    caps=0.4, foam=1.5),    # agua ácida con gas: turbia y espumosa
-    "Tenebris": dict(wind=7, amp=1.0, up=(0.0008, 0.0012, 0.003), under=(0.03, 0.06, 0.10), clear=40, n=1.33,
+    "Tenebris": dict(wind=7, amp=1.0, up=(0.0010, 0.0012, 0.0018), under=(0.04, 0.055, 0.07), clear=40, n=1.33,
                      caps=0.2, foam=1.2),
-    "Salus": dict(wind=9, amp=1.0, up=(0.002, 0.008, 0.012), under=(0.10, 0.35, 0.42), clear=50, n=1.38,
+    "Salus": dict(wind=9, amp=1.0, up=(0.0025, 0.0070, 0.0080), under=(0.12, 0.30, 0.30), clear=50, n=1.38,
                   caps=0.25, foam=1.6),    # salmuera: espuma de sal en las costas
 }
 
@@ -52,17 +52,17 @@ OCEANS = {  # upwelling = color del agua profunda; underwater = niebla submarina
 # altura de la capa, rango de nubes volumétricas, color, fades de escala
 EVE = {
     "Halum": dict(alt=20000, lo=20000, hi=26000, color=(230, 236, 245), fade=(230000, 280000), swap=True),
-    "Tenebris": dict(alt=2500, lo=2500, hi=9000, color=(150, 150, 160), fade=(140000, 180000), swap=True),
-    "Salus": dict(alt=2000, lo=2000, hi=8000, color=(225, 232, 236), fade=(120000, 160000), swap=True),
+    "Tenebris": dict(alt=2500, lo=2500, hi=9000, color=(150, 146, 142), fade=(140000, 180000), swap=True),
+    "Salus": dict(alt=2000, lo=2000, hi=8000, color=(228, 228, 224), fade=(120000, 160000), swap=True),
     "Scarch": dict(alt=3000, lo=3000, hi=12000, color=(140, 110, 100), fade=(130000, 170000), swap=False),
     "Creus": dict(alt=60000, lo=60000, hi=78000, color=(240, 244, 246), fade=(450000, 550000), swap=False),
 }
-OCEAN_SCALED = {"Halum": "#6b94cc", "Tenebris": "#0a0f1a", "Salus": "#1f4d5c"}   # color del mar visto desde órbita
+OCEAN_SCALED = {"Halum": "#6b94cc", "Tenebris": "#0d0f12", "Salus": "#24484a"}   # color del mar visto desde órbita
 
 # ------------------------------------------------------------------ PlanetShine (albedo -> intensidad de luz reflejada)
 ALBEDO = {"Creus": 0.70, "Halum": 0.55, "Ocrea": 0.85, "Pastora": 0.05, "Prima": 0.15, "Secunda": 0.60,
           "Heraldo": 0.04, "Krax": 0.03, "Scarch": 0.35, "Tenebris": 0.12, "Salus": 0.30, "Vestigia": 0.12,
-          "Nox": 0.02, "Lumen": 0.85, "Ignea": 0.15, "Fuligo": 0.01, "Caligo": 0.015, "Atra": 0.012,
+          "Nox": 0.02, "Lumen": 0.35, "Ignea": 0.15, "Fuligo": 0.01, "Caligo": 0.015, "Atra": 0.012,
           "Azabache": 0.02, "Brea": 0.015, "Tizne": 0.012, "Escoria": 0.02, "Hollin": 0.01}
 THICK = {"Creus": 1.0, "Halum": 1.0, "Scarch": 1.0, "Tenebris": 0.6, "Salus": 0.6}
 
@@ -88,7 +88,7 @@ def coverage(body):
         lum = col.mean(axis=2)
         cov = np.where(diff > 6, np.clip((lum - 60) / 150, 0.35, 1.0), 0.0)
         if body == "Salus":   # el hielo polar no es nube
-            ice = np.abs(col - np.array([223, 232, 238])).sum(axis=2) < 6
+            ice = np.abs(col - hexrgb(SALUS_ICE)).sum(axis=2) < 6
             cov = np.where(ice, 0.0, cov)
     elif body == "Scarch":   # celdas de tormenta a partir de la neblina
         haze = (col - 0.35 * img(body, "Surface")) / 0.65
@@ -115,7 +115,7 @@ def eve_textures(body, cfg):
         out = np.where((h < 0)[..., None], sea, surf)
         if body == "Salus":  # conserva el hielo salobre polar
             col = img(body, "Color")
-            ice = np.abs(col - np.array([223, 232, 238])).sum(axis=2) < 6
+            ice = np.abs(col - hexrgb(SALUS_ICE)).sum(axis=2) < 6
             out = np.where(ice[..., None], col, out)
         Image.fromarray(out.astype(np.uint8)).save(GD_TEX / body / f"{body}_ScaledEVE.png", optimize=True)
 
@@ -361,9 +361,9 @@ def scatterer_cfg():
 	}}
 }}
 """)
-    # Destello de Kraken: el de Kerbol, en magenta y más tenue
+    # Destello de Kraken: el de Kerbol, en rojo apagado y más tenue
     flare = (KSP / "StockScattererConfigs/Sunflares/Sun.cfg").read_text(encoding="utf-8").lstrip("\ufeff")
-    flare = flare.replace("\n    Sun\n", "\n    Kraken\n", 1).replace("flareColor = 1.0,1.0,1.0", "flareColor = 1.0,0.5,0.75", 1)
+    flare = flare.replace("\n    Sun\n", "\n    Kraken\n", 1).replace("flareColor = 1.0,1.0,1.0", "flareColor = 0.6,0.32,0.28", 1)
     head = ["// GENERADO por herramientas/generar_visuales.py — no editar a mano.",
             "// Scatterer: atmósferas, océanos y destello de Kraken. Usa las cáusticas y destellos de StockScattererConfigs."]
     patch = ["@Scatterer_planetsList:NEEDS[Scatterer]:FOR[MundosLejanos]", "{", "\t@scattererCelestialBodies", "\t{",
@@ -390,7 +390,7 @@ def planetshine_cfg():
     out = ["// GENERADO por herramientas/generar_visuales.py — no editar a mano.",
            "// PlanetShine: luz que cada cuerpo refleja sobre las naves (color medio de su textura, intensidad ∝ albedo).",
            "PlanetshineCelestialBody:NEEDS[PlanetShine]", "{", "\tname = Kraken", "\tisSun = True",
-           "\tcolor = 255,158,209", "\tintensity = 3", "\tatmosphereAmbient = 0", "\tgroundAmbientOverride = 1", "}"]
+           "\tcolor = 255,140,122", "\tintensity = 2", "\tatmosphereAmbient = 0", "\tgroundAmbientOverride = 1", "}"]
     for body, alb in ALBEDO.items():
         col = img(body, "Color").reshape(-1, 3).mean(axis=0)
         rgb = ",".join(str(int(round(c))) for c in col)

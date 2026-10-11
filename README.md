@@ -14,10 +14,10 @@ Un binario errante capturado por Kerbol:
 ![Creus–Halum](docs/preview_sistema.png)
 
 ### Sistema Kraken (2 años luz kerbales)
-Una enana marrón T2 de bandas granate y luz rojo-violeta, rodeada de tres discos:
+Una enana marrón T2 de bandas granate y luz rojiza y tenue, rodeada de tres discos:
 - **Krax**, un mundo de carbono abrasador donde se replican las máquinas;
 - **Scarch**, una sauna volcánica de 25 atm que las máquinas están desmontando;
-- **Tenebris**, un mundo oscuro de bosques negros y hogar de la colonia kerbal, con **Lumen**, su luna de hielo brillante;
+- **Tenebris**, un mundo oscuro e inhabitable con agua líquida, donde los kerbals han fundado una colonia en cúpulas; su luna **Lumen** es de hielo sucio, con géiseres en el polo sur;
 - **Salus**, un océano hipersalino que pasó por hiceano, con sus lunas **Vestigia** (restos del gran impacto) y **Nox** (capturada);
 - **Ignea**, una protoplaneta con océano de magma dentro del disco protoplanetario;
 - el **Cinturón Oscuro**: los planetas enanos Fuligo, Caligo y Atra y 5 asteroides, casi invisibles (albedo de 0.01 a 0.02).
@@ -37,7 +37,7 @@ Una enana marrón T2 de bandas granate y luz rojo-violeta, rodeada de tres disco
 | Kopernicus (probado con 1.12.1-247) | Planetas y estrellas |
 | ModuleManager | Parches de antena y ciencia |
 | **CTTP** (Community Terrain Texture Pack) | Texturas de detalle del suelo. Suele venir con OPM |
-| Parallax Continued + Parallax_StockScatterTextures | *Opcional*: rocas, flora negra y **las máquinas** de Kraken. Sin ellos el pack funciona, pero sin scatters |
+| Parallax Continued + Parallax_StockScatterTextures | *Opcional*: rocas, cristales y **las máquinas** de Kraken. Sin ellos el pack funciona, pero sin scatters |
 | Scatterer + StockScattererConfigs | *Opcional*: atmósferas, océanos y destello de Kraken |
 | EVE (Blackrack) + StockVolumetricClouds | *Opcional*: nubes 2D y volumétricas V5 |
 | PlanetShine | *Opcional*: luz reflejada por cada mundo |
@@ -66,6 +66,7 @@ herramientas/
   generar_referencias.py   láminas de referencia para el artista (PNG + PDF)
   previsualizar.py         vistas previas de docs/
   validar_pack.py          comprobación completa sin abrir KSP
+  empaquetar.py            zip para playtesters: Descargas/ehdj_rp-v<versión>.zip
 docs/
   CONCEPTO_CREUS_HALUM.md  historia, estructura interna y lugares con nombre
   DISENO.md / TEXTURAS.md  Creus–Halum
@@ -114,4 +115,13 @@ Ejecútalo antes de cada prueba en el juego. Comprueba:
 - los modelos y biomas de los scatters;
 - las claves de ciencia.
 
+<<<<<<< HEAD
 xdxd
+=======
+```bash
+python herramientas/empaquetar.py
+```
+Crea el zip para los playtesters en tu carpeta de Descargas: `ehdj_rp-v<versión>.zip`.
+- La versión sale del archivo `VERSION` y sube sola tras cada zip (0.0.120, 0.0.121…).
+- Antes de empaquetar pasa el validador: si hay errores, no crea el zip.
+>>>>>>> a16df9b (2139075spiogjopiah<sje)

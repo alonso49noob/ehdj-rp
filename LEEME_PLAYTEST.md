@@ -14,7 +14,7 @@ Las texturas son **provisionales**: las pintará un artista más adelante.
 
 | Mod | Qué aporta |
 |---|---|
-| Parallax Continued + Parallax_StockScatterTextures | Rocas, vegetación negra y las máquinas |
+| Parallax Continued + Parallax_StockScatterTextures | Rocas, cristales y las máquinas |
 | Scatterer + StockScattererConfigs | Atmósferas y océanos |
 | EVE (Blackrack) + StockVolumetricClouds | Nubes volumétricas |
 | PlanetShine | Luz reflejada por los planetas |
@@ -26,13 +26,21 @@ Menú de depuración: `Alt+F12` → Cheats → **Set Orbit**. Pon una nave en ó
 
 ## Qué probar
 
-- [ ] **Kraken** parece una enana T: bandas granate y magenta, sin corona y con luz tenue rojo-violeta.
+- [ ] **Kraken** parece una enana T: bandas granate y pardo rojizo, sin corona y con luz tenue y rojiza (sin tonos violeta).
 - [ ] Los **tres discos** de Kraken se ven desde el Tracking Station; el del Cinturón Oscuro casi no se ve.
 - [ ] Los **polos** de Creus, Halum, Scarch, Tenebris y Vestigia ya no tienen cuñas de luz ni de sombra.
 - [ ] **En vuelo**, los planetas del sistema Kraken quedan iluminados por Kraken (luz rojiza) y no por Kerbol (luz blanca).
 - [ ] **Krax**: la Fundición (20° N, 60° O) tiene agujas metálicas de las máquinas (requiere Parallax).
 - [ ] **Scarch**: los Campos de Extracción tienen máquinas. Haz un experimento allí: los registros están **en inglés**.
-- [ ] **Tenebris**: hay bosques negros y, en 18° S 140° E, los restos de una máquina. Las noches tienen luz de luna gracias a **Lumen**.
+- [ ] **Tenebris**: es inhabitable (sin oxígeno; los motores de reacción no funcionan), pero fácil de colonizar: tiene agua líquida, paracaídas útiles y 5 °C. En 18° S 140° E están los restos de una máquina.
+- [ ] **Cuerpos menores con personalidad**:
+  - Secunda: acantilado de 3.6 km, ¿cuánto dura la caída?
+  - Prima: dos lóbulos unidos por un cuello.
+  - Pastora: forma de nuez.
+  - Atra: forma de puro.
+  - Fuligo: el Ojo brillante.
+  - Lumen: franjas de tigre en el polo sur.
+  - Hollín: la baliza de las máquinas, con registro en inglés.
 - [ ] **Salus**: arcos de islas. Sus lunas son Vestigia y Nox (casi negra).
 - [ ] **Cinturón Oscuro** (Fuligo, Caligo, Atra y asteroides): casi invisibles.
 - [ ] **Halum**: amerizar en el océano de neón (7 atm). Volver a órbita es difícil, a propósito.

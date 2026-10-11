@@ -48,11 +48,11 @@ INFO = {
         "Paleta #d8e0e6, #b8c4cc, #9aa8b2. h = −4000 + gris × 8000."]),
     "Heraldo": ("Cometa: costra negra con manchas de hielo.", [
         "Paleta #3a3430, #2a2624, #1c1918 con manchas de hielo #c8d4dc (~5 %). h = −1500 + gris × 3000."]),
-    "Kraken": ("Enana T2: gigante gaseoso incandescente granate-magenta, sin corona.", [
+    "Kraken": ("Enana T2: gigante gaseoso incandescente granate oscuro, sin corona.", [
         "El shader de estrella no usa textura de color: usa Kraken_Bands (sunspotTex) y Kraken_Noise (noiseMap).",
         "Bands: gris, zonas claras = blanco, cinturones = oscuro, huecos ovales en las nubes. Noise: vetas finas en latitud.",
-        "Colores fijados en el .cfg: emitColor0 #4d0a1f → emitColor1 #8c1a3d; cinturones hacia #140309; halo #660f2e.",
-        "Discos (tiras 2048×16 RGBA): interior #e07a3a; protoplanetario #d09ab8 con hueco a 250 000 km (Ignea); Cinturón Oscuro #20181c casi invisible."]),
+        "Colores fijados en el .cfg: emitColor0 #2b0a0d → emitColor1 #571417; cinturones hacia #0d0303; halo #3d0d0d.",
+        "Discos (tiras 2048×16 RGBA): interior #b8643a; protoplanetario #8c6a62 con hueco a 250 000 km (Ignea); Cinturón Oscuro #20181c casi invisible."]),
     "Krax": ("Mundo de carbono tipo Mercurio, casi negro (albedo 0.03).", [
         "Grafito en 4 tonos (#3a3a42 → #141417) con brillo metálico; 4 cráteres jóvenes con rayos #4a4a55.",
         "La Fundición (20° N 60° O): mina en 6 terrazas (#4a2a26 / #3a201e) de 60 km y 4 zanjas #5a3a30 en X.",
@@ -62,17 +62,17 @@ INFO = {
         "Nieve orgánica #b8925e / #c9a46e en cumbres y polos; lava #3a2c2c con grietas #c8502a; mar ácido (color en el .cfg).",
         "3 Campos de Extracción: rejillas de pozos de 6 km (#2e2a2c, paredes #4a4446). Deben verse artificiales.",
         "Altura: h = −4000 + gris × 9000; 40 % de mar; 12 volcanes en escudo con caldera."]),
-    "Tenebris": ("Mundo oscuro de bosques negros y océanos negros; colonia kerbal.", [
-        "Bosques #20241d → #121512, basalto #2c2c32 / #3a3a42, playas #3a3632, fondo marino #0c121c, casquetes #c8ccd4.",
+    "Tenebris": ("Mundo oscuro e inhabitable con agua líquida: basalto, océanos negros y una colonia en cúpulas.", [
+        "Sin vegetación: el albedo bajo es mineral. Llanuras de basalto #2a2724 → #181716, tierras altas #2c2c32 / #3a3a42, playas #3a3632, fondo marino #0e1114, casquetes #c8c8c8.",
         "COLONIA (12° N 35° E): meseta PLANA a +320 m, gris #5a5a60 con luces #ffd890. No alterar su relieve.",
         "Restos de la máquina (18° S 140° E): cráter de 13 km #2a1a18 con anillo de óxido #5a3020.",
-        "Nubes grises (#6e727c, #9a9ea8, 30 %); con EVE van aparte. Altura: h = −4000 + gris × 8000."]),
-    "Lumen": ("Luna de hielo brillante (albedo 0.85): la lámpara de la noche de Tenebris.", [
-        "Paleta #f6f4fa, #e4e1ec, #cdc8da. Lleva cristales de hielo de Parallax encima.",
-        "En el juego se verá rosada por la luz de Kraken: pintar en blanco frío, no en rosa."]),
+        "Nubes grises (#706c6a, #9c9894, 30 %); con EVE van aparte. Altura: h = −4000 + gris × 8000."]),
+    "Lumen": ("Luna de hielo sucio (albedo 0.35): la lámpara tenue de la noche de Tenebris.", [
+        "Paleta gris #9c9894, #86827e, #6e6a68 (hielo con polvo del disco). Lleva cristales de hielo de Parallax encima.",
+        "Solo el polo sur es nieve limpia. La luz de Kraken la teñirá de rojizo: pintar en gris neutro."]),
     "Salus": ("Océano hipersalino (97 %): arcos de islas en los bordes de cuencas de impacto.", [
-        "Mar #1e4a5a → #0f2a33, someras turquesa #7aa8a8, islas de sal #d8d0c0 con roca #4a4440 en las laderas.",
-        "Hielo salobre polar #dfe8ee de borde irregular; nubes blancas (25 %).",
+        "Mar gris verdoso #244648 → #13292a (poco azul: la enana casi no emite azul), someras #8aa49a, islas de sal #d8d0c0 con roca #4a4440 en las laderas.",
+        "Hielo salobre polar #e0e2de de borde irregular; nubes blancas (25 %).",
         "Altura: h = −2500 + gris × 3600, nivel del mar en gris 0.694; exactamente un 3 % de tierra en arcos."]),
     "Vestigia": ("Luna nacida del gran impacto de Salus: basalto vitrificado.", [
         "Paleta #807a74, #6a6460, #57524e. Cráteres; superficie vidriosa. h = −1200 + gris × 3600."]),
@@ -90,9 +90,46 @@ INFO = {
         "Paleta #161618, #101012, #0a0a0b. h = −3000 + gris × 7000."]),
 }
 ASTEROIDS = ["Azabache", "Brea", "Tizne", "Escoria", "Hollin"]
+# Rasgos únicos de los cuerpos menores (lo que los saca de ser "relleno"): el artista debe conservarlos.
+INFO.update({
+    "Pastora": ("Luna pastora con forma de nuez: cresta ecuatorial de polvo del anillo.", [
+        "RASGO: cresta ecuatorial de ~3 km (como Pan y Atlas), más clara (#6a6a70) que el resto (#4a4a4e → #2e2e30).",
+        "La cresta debe ser continua y lisa: es polvo acumulado, no roca. h = −3000 + gris × 6000."]),
+    "Prima": ("Troyano L4: binario de contacto de tolinas, con un cuello brillante.", [
+        "RASGO: dos lóbulos unidos por un cuello (como Arrokoth). El cuello es el anillo |x| ≈ 0 (meridianos ±90° y polos), más claro (#cdbba3).",
+        "Lóbulos de tolinas #8a7563 → #4d4038. La forma está en la altura: h = −8000 + gris × 16000; no aplanarla."]),
+    "Secunda": ("Troyano L5 de hielo con el acantilado de Verona (3.6 km).", [
+        "RASGO: bloque hundido entre 40° E (pared vertical, cara de hielo #eef3f6) y 80–110° E (rampa suave), entre 32° N y 32° S.",
+        "Coronas ovaladas (surcos #aab8c2) en 10° S 130° E. Hielo #d8e0e6 → #9aa8b2. h = −4000 + gris × 8000."]),
+    "Heraldo": ("Cometa: costra negra perforada por pozos activos con hielo fresco.", [
+        "RASGO: 6 pozos de paredes verticales con fondo de hielo #c8d4dc; costra #3a3430 → #1c1918.",
+        "h = −1500 + gris × 3000."]),
+    "Vestigia": ("Luna nacida del impacto de Salus, con una cuenca multianillo.", [
+        "RASGO: cuenca de tres anillos concéntricos centrada en 10° N 0° (radio ~0.9 rad): fondo de vidrio oscuro #3a3836, anillos #9a948e.",
+        "Resto: basalto vitrificado #807a74 → #57524e. h = −1200 + gris × 3600."]),
+    "Nox": ("Luna capturada casi negra, con un cráter gigante y surcos paralelos.", [
+        "RASGO: cráter que ocupa media cara (5° S 60° E, como Stickney) y surcos paralelos que cruzan todo el cuerpo.",
+        "Paleta #141416 → #09090a (albedo 0.02). h = −3000 + gris × 6000."]),
+    "Lumen": ("Luna de hielo sucio con franjas de tigre y géiseres en el polo sur.", [
+        "RASGO: polo sur (al sur de 55° S) de nieve limpia #cfccc8 con 4–7 grietas paralelas #6a8894 (como Encélado).",
+        "Resto: hielo sucio #9c9894 → #6e6a68. El casquete polar debe ser lo único claro."]),
+    "Fuligo": ("Planeta enano negro con el Ojo: un cráter de sales brillantes.", [
+        "RASGO: el Ojo en 18° N 30° O, un cráter con fondo de sales #e8e4dc (como Occator en Ceres). Es lo único visible desde lejos.",
+        "Resto: hollín #1a1a1d → #0e0e10 con cráteres frescos #3a3a40. h = −2500 + gris × 6000."]),
+    "Caligo": ("Planeta enano de polvo de carbono, cruzado por una catena.", [
+        "RASGO: cadena de 12 cráteres alineados de 20° N 60° O a 10° S 40° E, con fondos #24222a.",
+        "Resto: #19171a → #0c0b0d. h = −2500 + gris × 6000."]),
+    "Atra": ("Intruso interestelar con forma de puro 3:1 y extremos rojizos.", [
+        "RASGO: la forma alargada está en la altura (h = −20000 + gris × 40000, eje ±X): no aplanarla.",
+        "Extremos rojizos #2a1c1a (|x| > 0.85, en lon 0° y 180°); resto #161618 → #0a0a0b."]),
+})
+
 MARKS = {"Creus": [("Gran Tormenta", (-28.0, 40.0))],
          "Krax": [("Fundición", SITES["Krax/Fundicion"])],
          "Tenebris": [("Colonia", SITES["Tenebris/Asentamiento"]), ("Restos", SITES["Tenebris/Restos"])]}
+MARKS.update({"Secunda": [("Verona", (0.0, 40.0)), ("Coronas", (-10.0, 130.0))], "Vestigia": [("Cuenca", (10.0, 0.0))],
+              "Nox": [("Gran Cráter", (-5.0, 60.0))], "Fuligo": [("El Ojo", (18.0, -30.0))],
+              "Caligo": [("Catena", (5.0, -10.0))]})
 
 
 def font(size, bold=False):
@@ -126,7 +163,7 @@ def map_panel(canvas, body, x0, y0, w, h):
         d.ellipse([x - 9, y - 9, x + 9, y + 9], outline=(255, 80, 80), width=3)
         d.text((x + 12, y - 9), name, font=font(15, True), fill=(255, 120, 120))
     d.rectangle([x0, y0, x0 + w, y0 + h], outline=(90, 95, 110))
-    title = "Mapa de color" if src.name.endswith("_Color.png") else "Kraken_Bands: el shader de estrella lo tiñe de granate-magenta"
+    title = "Mapa de color" if src.name.endswith("_Color.png") else "Kraken_Bands: el shader de estrella lo tiñe de granate oscuro"
     d.text((x0, y0 - 24), f"{title} (equirectangular 2:1, norte arriba, lon −180°…180°)", font=font(15), fill=DIM)
 
 
@@ -202,6 +239,8 @@ def sheet(body, num):
             d.text((40, y), ("• " if j == 0 else "  ") + line, font=font(16), fill=FG)
             y += 22
         y += 4
+    d.text((40, H - 52), "Normales: DXT5nm (X en ALFA, Y en verde, rojo = 255) y planas por encima de ~75° de latitud.",
+           font=font(13), fill=(255, 190, 120))
     d.text((40, H - 30), f"Mundos Lejanos · referencia {num:02d} · texturas provisionales generadas por código "
                         f"(GameData/{S.PACK}/PluginData/{body}/)", font=font(13), fill=DIM)
     path = OUT / f"{num:02d}_{body}.png"
@@ -224,9 +263,10 @@ def asteroid_sheet(num):
         for j, (hx, _) in enumerate(palette(np.asarray(Image.open(TEX / b / f"{b}_Color.png").convert("RGB")), 3)):
             d.rectangle([x, 440 + j * 40, x + 60, 470 + j * 40], fill=hx, outline=(90, 95, 110))
             d.text((x + 70, 446 + j * 40), hx, font=font(15), fill=FG)
-    notes = ["Azabache: carbono vítreo, negro con reflejos azulados. Brea: orgánicos pegajosos pardo-negros.",
-             "Tizne: polvo finísimo negro neutro. Escoria: restos fundidos, vetas pardas. Hollín: el más oscuro (0.01).",
-             "Formas de patata con cráteres (plantilla Gilly). Texturas 1024×512 bastan; mismas reglas de formato."]
+    notes = ["Azabache: facetas planas de carbono vítreo con bordes que destellan en azul (#3c4658).",
+             "Brea: blob liso sin cráteres, con charcos planos de brea #0b0908. Tizne: montón de escombros sembrado de bloques.",
+             "Escoria: esponja de cientos de vesículas (#2a1a12). Hollín: el más oscuro (0.01), con la BALIZA de las máquinas en 0° 0°.",
+             "Formas de patata (plantilla Gilly); 1024×512 bastan. Cada uno conserva su rasgo: es lo que los distingue."]
     y = 640
     d.text((40, y), "Notas para el artista", font=font(20, True), fill=FG)
     for n in notes:

@@ -1,4 +1,4 @@
-"""Genera los scatters de Parallax Continued del sistema Kraken (rocas nativas, máquinas y flora negra).
+"""Genera los scatters de Parallax Continued del sistema Kraken (rocas nativas y máquinas).
 
 Clona bloques `Scatter` de las configs de Parallax_StockScatterTextures instaladas (modelos,
 LODs y materiales que ya funcionan) y solo cambia el nombre, el tinte (_Color), la densidad,
@@ -43,9 +43,8 @@ PLAN = {
     "Tenebris": [
         ("Tylo", "SmallSlabs", "LosasBasalto", (0.35, 0.35, 0.40), 1.0, None,
          ["Oceano Oscuro", "Asentamiento Kerbal"], 2),
-        ("Eve", "Flora", "FloraNegra", (0.10, 0.10, 0.11), 1.0, ["Bosques Negros"], None, 2),
-        ("Laythe", "LaytheFern", "HelechoNegro", (0.10, 0.10, 0.11), 1.0, ["Bosques Negros"], None, 2),
-        ("Laythe", "LaytheShrub", "ArbustoNegro", (0.10, 0.10, 0.11), 1.0, ["Bosques Negros"], None, 2),
+        ("Dres", "MedRocksVar1", "BloquesBasalto", (0.22, 0.21, 0.20), 1.0, ["Llanuras de Basalto"], None, 2),
+        ("Dres", "SmallRocksVar1", "EscoriaVolcanica", (0.20, 0.19, 0.18), 1.0, ["Llanuras de Basalto"], None, 2),
         ("Moho", "MetalSpireWide", "MaquinaDerribada", (0.60, 0.35, 0.25), 15.0, ["Restos de la Maquina"], None, None),
         ("Moho", "SmallMetalCluster", "RestosMaquina", (0.60, 0.35, 0.25), 1.0, ["Restos de la Maquina"], None, None),
     ],
@@ -56,16 +55,18 @@ PLAN = {
         ("Tylo", "SmallRocksVar1", "RocasVitrificadas", (0.90, 0.88, 0.86), 1.0, None, None, None),
         ("Tylo", "MedRocksVar1", "RocasVitrificadasMed", (0.90, 0.88, 0.86), 1.0, None, None, None),
     ],
-    "Lumen": [  # cristales de hielo de Ike, blanqueados
-        ("Ike", "SmallCrystals", "CristalesHielo", (1.30, 1.30, 1.35), 1.0, None, None, None),
-        ("Ike", "TallCrystals", "CristalesAltos", (1.30, 1.30, 1.35), 1.0, None, None, None),
-        ("Tylo", "SmallRocksVar1", "BloquesHielo", (1.60, 1.60, 1.70), 1.0, None, None, None),
+    "Lumen": [  # cristales de hielo de Ike, grises de polvo
+        ("Ike", "SmallCrystals", "CristalesHielo", (0.80, 0.78, 0.76), 1.0, None, None, None),
+        ("Ike", "TallCrystals", "CristalesAltos", (0.80, 0.78, 0.76), 1.0, None, None, None),
+        ("Tylo", "SmallRocksVar1", "BloquesHielo", (0.85, 0.83, 0.80), 1.0, None, None, None),
     ],
     # Cinturón Oscuro: rocas casi negras (albedo 0.01–0.02)
     "Fuligo": [("Dres", "SmallRocksVar1", "RocasHollin", (0.12, 0.12, 0.13), 1.0, None, None, None),
                ("Dres", "MedRocksVar1", "BloquesHollin", (0.12, 0.12, 0.13), 1.0, None, None, None)],
     "Caligo": [("Dres", "SmallRocksVar1", "RocasCarbono", (0.11, 0.10, 0.12), 1.0, None, None, None)],
     "Atra": [("Dres", "MedRocksVar1", "BloquesNegros", (0.10, 0.10, 0.10), 1.0, None, None, None)],
+    # La baliza de Hollín: las máquinas estuvieron en el Cinturón Oscuro (registro en inglés en Ciencia.cfg)
+    "Hollin": [("Moho", "MetalSpire", "BalizaMaquinas", MACHINE, 50.0, ["Baliza"], None, None)],
     "Ignea": [
         ("Dres", "SmallRocksVar1", "CostraRota", (0.35, 0.22, 0.18), 1.0, ["Costra Enfriada"], None, None),
         ("Dres", "MedRocksVar1", "BloquesCostra", (0.35, 0.22, 0.18), 1.0, ["Costra Enfriada"], None, None),
@@ -151,7 +152,8 @@ def tint(color, rgb):
 
 # Subdivisión de Parallax por cuerpo (nivel, radio), como en Parallax_StockTerrainTextures
 SUBDIV = {"Krax": (7, 700), "Scarch": (6, 600), "Tenebris": (6, 600), "Salus": (6, 500), "Vestigia": (6, 500),
-          "Ignea": (6, 500), "Lumen": (6, 700), "Fuligo": (6, 500), "Caligo": (6, 500), "Atra": (6, 500)}
+          "Ignea": (6, 500), "Lumen": (6, 700), "Fuligo": (6, 500), "Caligo": (6, 500), "Atra": (6, 500),
+          "Hollin": (5, 350)}
 PQS_OUT = OUT.with_name("Parallax_PQS.cfg")
 
 

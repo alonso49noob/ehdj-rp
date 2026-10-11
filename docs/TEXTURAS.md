@@ -27,7 +27,7 @@ Muchos packs voltean los DDS en vertical al exportar; comprobadlo con este marca
 | Tipo de textura | Formato final | Por qué |
 |---|---|---|
 | Color (vista lejana y `VertexColorMap`) | DDS **DXT1** (BC1); DXT5 si lleva alfa | Rápido y ligero en RAM |
-| Normal | DDS **DXT5nm**, o RGB normal (X = este, Y = norte, Z = arriba) | Formato estándar de KSP |
+| Normal | DDS **DXT5nm**, o PNG RGBA con la misma disposición: **X (este) en el ALFA, Y (norte) en el verde, rojo = 255** | Los shaders de KSP leen X del alfa. Un PNG RGB normal sale con X = +1: luz torcida y cuñas en los polos (lo comprueba `validar_pack.py`). Además, **planas por encima de ~75°** de latitud |
 | Altura (PQS) | DDS **R16** (16 bits, admitido por tu Kopernicus) o PNG gris de 8 bits | Con 8 bits, Halum tiene escalones de 17.6 m |
 | Biomas | **PNG RGB sin compresión**, colores exactos y **sin antialiasing** | DXT altera los colores y rompe la detección de biomas |
 | Anillo | PNG RGBA o DDS DXT5 | El canal alfa es la densidad del anillo |
@@ -74,10 +74,10 @@ Cada uno tiene 4 texturas: `<Cuerpo>_Color`, `_Normal`, `_Height` y `_Biomes`, t
 
 | Cuerpo | Radio | Altura (`offset` / `deformity`) | Aspecto |
 |---|---|---|---|
-| Pastora | 10 km | −3000 / 6000 | Hollín negro del anillo: `#4a4a4e`, `#3d3d40`, `#2e2e30` |
-| Prima | 28 km | −5000 / 10000 | Polvo de tolinas rojizo: `#8a7563`, `#6e5a4e`, `#4d4038` |
-| Secunda | 18 km | −4000 / 8000 | Hielo de agua claro: `#d8e0e6`, `#b8c4cc`, `#9aa8b2` |
-| Heraldo | 5 km | −1500 / 3000 | Costra de cometa negra con manchas de hielo `#c8d4dc` |
+| Pastora | 10 km | −3000 / 6000 | Hollín negro del anillo: `#4a4a4e`, `#3d3d40`, `#2e2e30`. **Rasgo**: cresta ecuatorial de ~3 km, más clara (`#6a6a70`), que le da forma de nuez |
+| Prima | 28 km | −8000 / 16000 | Polvo de tolinas rojizo: `#8a7563`, `#6e5a4e`, `#4d4038`. **Rasgo**: binario de contacto; dos lóbulos y un cuello claro (`#cdbba3`) |
+| Secunda | 18 km | −4000 / 8000 | Hielo de agua claro: `#d8e0e6`, `#b8c4cc`, `#9aa8b2`. **Rasgo**: acantilado de Verona (3.6 km) en 40° E y coronas ovaladas en 10° S 130° E |
+| Heraldo | 5 km | −1500 / 3000 | Costra de cometa negra con manchas de hielo `#c8d4dc`. **Rasgo**: 6 pozos activos con fondo de hielo fresco |
 
 Formas de patata con cráteres. Los biomas (Depresiones, Llanuras, Crestas) salen de la altura.
 

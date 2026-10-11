@@ -194,6 +194,12 @@ def main():
         for k in ("texture", "normals", "noiseMap", "sunspotTex", "rampMap"):
             if sv.node("Material").get(k):
                 check_texture(sv.node("Material").get(k), where)
+        nrm = sv.node("Material").get("normals")
+        if nrm and nrm.endswith(".png") and (GAMEDATA / nrm).exists():
+            # Los shaders de KSP leen X del ALFA (DXT5nm). Un PNG RGB da X = +1: luz torcida y cuñas en los polos.
+            im = Image.open(GAMEDATA / nrm)
+            if im.mode != "RGBA" or np.asarray(im)[..., 0].mean() < 250:
+                errors.append(f"{where}: {nrm} no está en formato DXT5nm (X en alfa, Y en verde, rojo = 255)")
         if star:
             light = sv.node("Light")
             if not light or abs(num(light.get("luminosity")) / S.KRAKEN_LUMINOSITY - 1) > 0.01:
