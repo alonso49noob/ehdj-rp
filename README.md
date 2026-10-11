@@ -113,3 +113,5 @@ Ejecútalo antes de cada prueba en el juego. Comprueba:
 - las curvas de atmósfera y la luminosidad de la estrella;
 - los modelos y biomas de los scatters;
 - las claves de ciencia.
+
+xd
