@@ -9,14 +9,18 @@ import time
 from collections import defaultdict, deque
 from pathlib import Path
 
-import anthropic
 import discord
 from discord.ext import tasks
 
 log = logging.getLogger("farbeyond-bot")
 logging.basicConfig(level=logging.INFO)
 
+# Proveedor: "gemini" o "claude". Si no se indica, se elige según la clave que haya.
+PROVIDER = os.environ.get("LLM_PROVIDER") or (
+    "gemini" if os.environ.get("GEMINI_API_KEY") and not os.environ.get("ANTHROPIC_API_KEY") else "claude"
+)
 MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-5-5")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 KNOWLEDGE_DIR = Path(os.environ.get("KNOWLEDGE_DIR", "..")).resolve()
 ANNOUNCE_CHANNEL_ID = int(os.environ.get("ANNOUNCE_CHANNEL_ID") or 0)
 CHAT_CHANNEL_IDS = {
@@ -26,6 +30,8 @@ HISTORY_MESSAGES = 12      # mensajes recientes del canal que se pasan como cont
 KNOWLEDGE_MAX_CHARS = 120_000
 USER_COOLDOWN_S = 5        # antes de contestar de nuevo al mismo usuario
 DISCORD_LIMIT = 2000
+RATE_LIMIT_MSG = "Estoy recibiendo demasiadas preguntas a la vez, prueba de nuevo en un minuto."
+ERROR_MSG = "Ahora mismo no puedo pensar bien, inténtalo más tarde."
 
 PERSONALITY = """\
 Eres el asistente del servidor de Discord de "El Hangar de Jeb", comunidad de Kerbal Space Program en español.
@@ -72,7 +78,6 @@ SYSTEM = [
     {"type": "text", "text": "DOCUMENTACIÓN DEL MOD:\n" + KNOWLEDGE, "cache_control": {"type": "ephemeral"}},
 ]
 
-claude = anthropic.AsyncAnthropic()
 intents = discord.Intents.default()
 intents.message_content = True
 bot = discord.Client(intents=intents, allowed_mentions=discord.AllowedMentions.none())
@@ -94,25 +99,68 @@ def split_message(text: str) -> list[str]:
     return chunks
 
 
-async def ask_claude(messages: list[dict], extra_system: str | None = None) -> str:
-    system = SYSTEM + ([{"type": "text", "text": extra_system}] if extra_system else [])
+async def ask_claude(messages: list[dict]) -> str:
+    import anthropic
+
     try:
-        resp = await claude.messages.create(
+        resp = await _claude().messages.create(
             model=MODEL,
             max_tokens=1024,
-            system=system,
+            system=SYSTEM,
             messages=messages,
             output_config={"effort": "low"},
         )
     except anthropic.RateLimitError:
-        return "Estoy recibiendo demasiadas preguntas a la vez, prueba de nuevo en un minuto."
+        return RATE_LIMIT_MSG
     except (anthropic.APIConnectionError, anthropic.APIStatusError) as e:
         log.exception("Error de la API de Claude: %s", e)
-        return "Ahora mismo no puedo pensar bien, inténtalo más tarde."
+        return ERROR_MSG
     if resp.stop_reason == "refusal":
         return "Con eso no te puedo ayudar."
     text = "".join(b.text for b in resp.content if b.type == "text").strip()
     return text or "..."
+
+
+async def ask_gemini(messages: list[dict]) -> str:
+    from google.genai import errors, types
+
+    contents = [
+        types.Content(role="user" if m["role"] == "user" else "model", parts=[types.Part(text=m["content"])])
+        for m in messages
+    ]
+    config = types.GenerateContentConfig(
+        system_instruction="\n\n".join(b["text"] for b in SYSTEM),
+        max_output_tokens=1024,
+    )
+    try:
+        resp = await _gemini().aio.models.generate_content(model=GEMINI_MODEL, contents=contents, config=config)
+    except errors.APIError as e:
+        log.exception("Error de la API de Gemini: %s", e)
+        return RATE_LIMIT_MSG if e.code == 429 else ERROR_MSG
+    return (resp.text or "").strip() or "..."
+
+
+async def ask_llm(messages: list[dict]) -> str:
+    return await (ask_gemini if PROVIDER == "gemini" else ask_claude)(messages)
+
+
+_clients: dict = {}
+
+
+def _claude():
+    if "claude" not in _clients:
+        import anthropic
+
+        _clients["claude"] = anthropic.AsyncAnthropic()
+    return _clients["claude"]
+
+
+def _gemini():
+    if "gemini" not in _clients:
+        from google import genai
+
+        _clients["gemini"] = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    return _clients["gemini"]
 
 
 def build_turns(history: list[discord.Message]) -> list[dict]:
@@ -171,7 +219,7 @@ async def on_message(message: discord.Message):
         turns = build_turns(history)
         if not turns or turns[-1]["role"] != "user":
             return
-        answer = await ask_claude(turns)
+        answer = await ask_llm(turns)
     first = True
     for chunk in split_message(answer):
         if first:
@@ -210,7 +258,7 @@ async def weekly_summary():
         "Estos son los commits de la última semana (ignora los que no se entiendan o sean ruido):\n"
         + commits
     )
-    text = await ask_claude([{"role": "user", "content": prompt}])
+    text = await ask_llm([{"role": "user", "content": prompt}])
     for chunk in split_message(text):
         await channel.send(chunk)
 
