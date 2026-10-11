@@ -1,6 +1,6 @@
-"""Genera los .cfg de los cuerpos menores de Kraken (lunas y Cinturón Oscuro) a partir de sistema.py.
+"""Genera los .cfg de los cuerpos menores (lunas y Cinturón Oscuro de Kraken, Ceniza de Skolta) a partir de sistema.py.
 
-Salida: GameData/<pack>/Configs/Kraken/Lunas.cfg y CinturonOscuro.cfg
+Salida: GameData/<pack>/Configs/Kraken/Lunas.cfg, Kraken/CinturonOscuro.cfg y Skolta/Ceniza.cfg
 Fades de PQS/escala y límites de warp escalados desde Tal (OPM, R = 22 km), como en CuerposMenores.cfg.
 Uso:  python herramientas/generar_cuerpos_menores.py
 """
@@ -10,7 +10,7 @@ import sistema as S
 from generar_texturas import BIOMES, HEIGHTMAPS
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-OUT = ROOT / "GameData" / S.PACK / "Configs" / "Kraken"
+OUT = ROOT / "GameData" / S.PACK / "Configs"
 
 # cuerpo: (descripción, rotación s o None = síncrona, ciencia (aterrizado, espacio bajo, alto, recuperación), brillo)
 INFO = {
@@ -29,13 +29,17 @@ INFO = {
     "Tizne": ("Un montón de escombros que apenas se mantiene unido: su superficie está sembrada de bloques sueltos del tamaño de edificios, cubiertos de un polvo tan fino y oscuro que mancha todo lo que toca.", 8000, (22, 15, 12, 20), 0.0),
     "Escoria": ("Los restos fundidos de una colisión antigua. Al enfriarse, el gas atrapado dejó cientos de vesículas: es una esponja de escoria vítrea, negra con vetas pardas.",
                 17000, (22, 15, 12, 20), 0.05),
+    "Ceniza": ("La luna de Skolta: una roca parda de 350 km de diámetro, capturada del cinturón de asteroides, que gira en una órbita inclinada 18°. Su superficie es de arcillas con amonio, como la de Ceres. Cerca del ecuador se alza el Monte Solitario, un domo de hielo y sales de 3 km de altura con las laderas surcadas de vetas claras: un criovolcán que se apagó hace poco. Desde el suelo de Skolta casi no se ve: la bruma la reduce a una mancha borrosa.",
+               None, (8, 6, 5, 7), 0.1),
     "Hollin": ("El cuerpo más pequeño y el más oscuro del cinturón: refleja apenas el 1 % de la luz. Y no está vacío: en su ecuador hay una plataforma nivelada con una estructura metálica encima. Las máquinas estuvieron aquí.", 20000, (22, 15, 12, 20), 0.0),
 }
-FILES = {"Lunas.cfg": ["Vestigia", "Nox", "Lumen"],
-         "CinturonOscuro.cfg": ["Fuligo", "Caligo", "Atra", "Azabache", "Brea", "Tizne", "Escoria", "Hollin"]}
+FILES = {"Kraken/Lunas.cfg": ["Vestigia", "Nox", "Lumen"],
+         "Kraken/CinturonOscuro.cfg": ["Fuligo", "Caligo", "Atra", "Azabache", "Brea", "Tizne", "Escoria", "Hollin"],
+         "Skolta/Ceniza.cfg": ["Ceniza"]}
 HEADERS = {
-    "Lunas.cfg": "LUNAS de Salus (Vestigia, Nox) y de Tenebris (Lumen)",
-    "CinturonOscuro.cfg": "CINTURÓN OSCURO (450 000–820 000 km): planetas enanos y asteroides con albedo 0.01–0.02",
+    "Kraken/Lunas.cfg": "LUNAS de Salus (Vestigia, Nox) y de Tenebris (Lumen)",
+    "Kraken/CinturonOscuro.cfg": "CINTURÓN OSCURO (450 000–820 000 km): planetas enanos y asteroides con albedo 0.01–0.02",
+    "Skolta/Ceniza.cfg": "CENIZA, la luna de Skolta (propuesta de la ficha: una luna mediana, capturada)",
 }
 
 

@@ -96,11 +96,25 @@ def build(name):
     L += ["}", "temperatureCurveIsNormalized = false", "temperatureCurve", "{"]
     L += [f"\tkey = {f(h)} {f(T)} {f(d)} {f(d)}" for h, T, d in tk]
     L += ["}"]
-    # Sin variación por Sol/latitud: a 800 KAU la luz de Kerbol es despreciable
-    for curve, x1 in (("temperatureSunMultCurve", top), ("temperatureLatitudeBiasCurve", 90),
-                      ("temperatureLatitudeSunMultCurve", 90), ("temperatureAxialSunBiasCurve", 1),
-                      ("temperatureAxialSunMultCurve", 1), ("temperatureEccentricityBiasCurve", 1)):
-        L += [curve, "{", "\tkey = 0 0 0 0", f"\tkey = {x1} 0 0 0", "}"]
+    # Variación con la latitud (lat_bias): KSP suma temperatureLatitudeBiasCurve(lat) y la escala con
+    # temperatureSunMultCurve(altura), que vale 1 en el suelo y 0 en la tropopausa.
+    # Sin lat_bias, temperatura uniforme (a 800 KAU o junto a una enana T la luz apenas cuenta).
+    curves = {c: ["\tkey = 0 0 0 0", f"\tkey = {x1} 0 0 0"]
+              for c, x1 in (("temperatureSunMultCurve", top), ("temperatureLatitudeBiasCurve", 90),
+                            ("temperatureLatitudeSunMultCurve", 90), ("temperatureAxialSunBiasCurve", 1),
+                            ("temperatureAxialSunMultCurve", 1), ("temperatureEccentricityBiasCurve", 1))}
+    if A.get("lat_bias"):
+        pts = A["lat_bias"]
+        keys = []
+        for i, (lat, dT) in enumerate(pts):
+            inner = 0 < i < len(pts) - 1           # extremos con tangente 0: sin saltos en ecuador y polos
+            t = (pts[i + 1][1] - pts[i - 1][1]) / (pts[i + 1][0] - pts[i - 1][0]) if inner else 0
+            keys.append(f"\tkey = {lat} {f(dT)} {f(t)} {f(t)}")
+        curves["temperatureLatitudeBiasCurve"] = keys
+        h_tropo = next(hh for hh, _, T in prof if T <= A["T_tropo"] + 0.01)
+        curves["temperatureSunMultCurve"] = ["\tkey = 0 1 0 0", f"\tkey = {round(h_tropo, -2):g} 0 0 0"]
+    for curve, keys in curves.items():
+        L += [curve, "{", *keys, "}"]
     L.append(END)
 
     rho0 = A["p0_atm"] * S.ATM * 1000 * M / (RGAS * A["T0"])

@@ -1,4 +1,4 @@
-"""Genera los scatters de Parallax Continued del sistema Kraken (rocas nativas y máquinas).
+"""Genera los scatters de Parallax Continued del pack (rocas nativas, hielo y las máquinas de Kraken).
 
 Clona bloques `Scatter` de las configs de Parallax_StockScatterTextures instaladas (modelos,
 LODs y materiales que ya funcionan) y solo cambia el nombre, el tinte (_Color), la densidad,
@@ -50,6 +50,17 @@ PLAN = {
     ],
     "Salus": [
         ("Duna", "SlabsSmall", "CostrasSal", (1.40, 1.35, 1.25), 1.0, ["Arcos de Islas"], None, 2),
+    ],
+    "Norh": [  # basalto escarchado, coladas de lava y bloques de hielo polar
+        ("Duna", "SmallRocksVar1", "RocasVolcanicas", (0.62, 0.46, 0.38), 1.0, None,
+         ["Mar Ecuatorial", "Casquetes Polares"], 2),
+        ("Duna", "SlabsMed", "LosasLava", (0.45, 0.35, 0.30), 1.0, ["Llanuras de Lava", "Volcanes", "Gran Volcan"], None, 2),
+        ("Tylo", "SmallRocksVar1", "BloquesHielo", (1.25, 1.28, 1.32), 1.0, ["Casquetes Polares", "Tundra de Amoniaco"], None, 2),
+    ],
+    "Skolta": [  # anortosita blanca, basalto con azufre y rocas de cobre azules
+        ("Tylo", "SmallRocksVar1", "RocasAnortosita", (1.30, 1.28, 1.22), 1.0, ["Tierras Altas", "Montanas"], None, 2),
+        ("Duna", "SlabsSmall", "LosasBasalto", (0.70, 0.60, 0.40), 1.0, ["Campos Volcanicos", "Llanuras"], None, 2),
+        ("Duna", "SmallRocksVar1", "RocasCobre", (0.45, 0.60, 1.20), 1.0, ["Yacimientos Metalicos"], None, 2),
     ],
     "Vestigia": [
         ("Tylo", "SmallRocksVar1", "RocasVitrificadas", (0.90, 0.88, 0.86), 1.0, None, None, None),
@@ -152,6 +163,7 @@ def tint(color, rgb):
 
 # Subdivisión de Parallax por cuerpo (nivel, radio), como en Parallax_StockTerrainTextures
 SUBDIV = {"Krax": (7, 700), "Scarch": (6, 600), "Tenebris": (6, 600), "Salus": (6, 500), "Vestigia": (6, 500),
+          "Norh": (6, 600), "Skolta": (6, 600),
           "Ignea": (6, 500), "Lumen": (6, 700), "Fuligo": (6, 500), "Caligo": (6, 500), "Atra": (6, 500),
           "Hollin": (5, 350)}
 PQS_OUT = OUT.with_name("Parallax_PQS.cfg")

@@ -124,7 +124,26 @@ INFO.update({
         "Extremos rojizos #2a1c1a (|x| > 0.85, en lon 0° y 180°); resto #161618 → #0a0a0b."]),
 })
 
-MARKS = {"Creus": [("Gran Tormenta", (-28.0, 40.0))],
+# Norh (sistema de Kerbol): última lámina antes de la de asteroides, para no renumerar las anteriores
+INFO["Norh"] = ("Mundo rocoso helado bajo 12 bar: neblina ocre, mar ecuatorial líquido, volcanes y anillos de hielo.", [
+    "Color: neblina ocre en bandas (#a06a34 → #7a4e22) al 70 % + terreno al 30 %; polos más claros (#c49a6a).",
+    "Surface: mar #33403f, costas #8a7a68, roca #6e4a34 → #4a3224, coladas #33241c, escarcha #b4aca4, hielo #dfe6ea.",
+    "SIN CRÁTERES. Decenas de volcanes con caldera (algunos activos, #e8702a). Gran Volcán: 8° N 50° O, ~90 km de radio, +8 900 m.",
+    "Anillos #bcd8ea (borde interior #7d8f9c), 1.45–2.05 R, inclinados 20°. Tira RGBA: u = 0 es el borde EXTERIOR."])
+
+# Skolta y Ceniza (ficha del equipo del 2026-10-11): colores de la paleta de la ficha
+INFO["Skolta"] = ("Titán cálido: bruma naranja, mar pálido de amoníaco con hidracina, tierras altas blancas y dunas oscuras.", [
+    "Color: bruma naranja (#D68B52 → #A86C3F) al 72 % + terreno muy difuminado al 28 %; casquetes crema #efe6cf.",
+    "Surface: tierras altas #EDEBE5/#F2F0EA con vetas #B5CDB0, escarpes #C4C1B9, llanuras #C98C50, volcanes #D9742A/#E0A52A.",
+    "Dunas #4A3326/#2E1F18 (15–35°), salinas #F3ECDB, deltas #9A5A38, bahías de azufre #2F4C9E, yacimientos #4E7BE0/#7A5CC8.",
+    "Mar (65 %): líquido INCOLORO: fondo somero crema #D6CDB2 (marrón #4A3326 junto a dunas), profundo #3A3028; de lejos gris ámbar #8C7A62.",
+    "Bahías de azufre #2F4C9E; cerca del cobre y níquel #4E7BE0. h = −3500 + gris × 12000."])
+INFO["Ceniza"] = ("Luna de Skolta: arcillas amoniacadas pardas (como Ceres) y el Monte Solitario.", [
+    "Paleta #6a645c → #46413c. RASGO: Monte Solitario en 12° N 75° E, domo de 3 km con vetas claras #c8c4bc.",
+    "h = −3000 + gris × 7000."])
+
+MARKS = {"Creus": [("Gran Tormenta", (-28.0, 40.0))], "Norh": [("Gran Volcán", (8.0, -50.0))],
+         "Ceniza": [("Monte Solitario", (12.0, 75.0))],
          "Krax": [("Fundición", SITES["Krax/Fundicion"])],
          "Tenebris": [("Colonia", SITES["Tenebris/Asentamiento"]), ("Restos", SITES["Tenebris/Restos"])]}
 MARKS.update({"Secunda": [("Verona", (0.0, 40.0)), ("Coronas", (-10.0, 130.0))], "Vestigia": [("Cuenca", (10.0, 0.0))],
@@ -183,7 +202,7 @@ def sheet(body, num):
     d = ImageDraw.Draw(canvas)
     ref = S.BODIES[body]
     concept, notes = INFO[body]
-    system = "Sistema Kraken" if ref["system"] == "Kraken" else "Sistema Creus–Halum"
+    system = {"Kraken": "Sistema Kraken", "Kerbol": "Sistema de Kerbol"}.get(ref["system"], "Sistema Creus–Halum")
     d.text((40, 24), body, font=font(40, True), fill=FG)
     d.text((40 + d.textlength(body, font=font(40, True)) + 20, 40),
            f"{system} · R = {ref['radius'] / 1000:g} km · g = {ref['gee']:g} · plantilla {ref['template']}",
@@ -239,6 +258,13 @@ def sheet(body, num):
             d.text((40, y), ("• " if j == 0 else "  ") + line, font=font(16), fill=FG)
             y += 22
         y += 4
+    ring = TEX / body / f"{body}_Ring.png"
+    if ring.exists():                         # tira del anillo: u = 0 borde exterior (izquierda)
+        strip = Image.open(ring).convert("RGBA").resize((700, 14))
+        bgc = Image.new("RGBA", strip.size, (60, 60, 70, 255))
+        bgc.alpha_composite(strip)
+        canvas.paste(bgc.convert("RGB"), (800, 958))
+        d.text((800, 940), f"{body}_Ring.png (exterior ← → interior; el alfa es la densidad)", font=font(13), fill=DIM)
     d.text((40, H - 52), "Normales: DXT5nm (X en ALFA, Y en verde, rojo = 255) y planas por encima de ~75° de latitud.",
            font=font(13), fill=(255, 190, 120))
     d.text((40, H - 30), f"Mundos Lejanos · referencia {num:02d} · texturas provisionales generadas por código "

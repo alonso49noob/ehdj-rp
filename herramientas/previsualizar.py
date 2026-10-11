@@ -53,11 +53,11 @@ def sphere(tex, r, tilt=12.0, spin=0.0, glow=None, light=(1.0, 1.0, 1.0)):
     return Image.fromarray(out.clip(0, 255).astype(np.uint8), "RGBA")
 
 
-def ring_layers(cx, cy, R, back):
-    """Anillo como elipse plana (vista casi de canto, 4°) partida en mitad trasera/delantera."""
-    prof = np.asarray(Image.open(TEX / "Creus" / "Creus_Ring.png").convert("RGBA"), np.float32)[0]
-    ri, ro = S.RING["inner"] / 1000 * R, S.RING["outer"] / 1000 * R
-    s = np.sin(np.radians(4.0))
+def ring_layers(cx, cy, R, back, body="Creus", ring=S.RING, view=4.0):
+    """Anillo como elipse plana (vista `view` grados sobre su plano) partida en mitad trasera/delantera."""
+    prof = np.asarray(Image.open(TEX / body / f"{body}_Ring.png").convert("RGBA"), np.float32)[0]
+    ri, ro = ring["inner"] / 1000 * R, ring["outer"] / 1000 * R
+    s = np.sin(np.radians(view))
     w, h = int(2 * ro + 4), int(2 * ro * s + 4)
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
     dx, dy = xx - w / 2, (yy - h / 2) / s
@@ -116,6 +116,33 @@ def detalle(body, r=260, folder="docs"):
         im = sphere(tex, r, tilt=18, spin=spin)
         canvas.alpha_composite(im, (40 + k * (2 * r + 40), 40))
     out = ROOT / folder / f"preview_{body.lower()}.png"
+    canvas.convert("RGB").save(out)
+    print(out)
+
+
+def norh_preview():
+    """Norh con sus anillos de hielo inclinados, como en el dibujo del concepto (docs/norh/preview_norh_anillos.png)."""
+    W, H = 1400, 1100
+    canvas = Image.new("RGBA", (W, H), (0, 0, 0, 255))
+    cx, cy, R, roll = W // 2, H // 2, 300, -55                # roll: giro de la elipse en pantalla
+    glow = (200, 140, 80)
+
+    def put(layer):
+        im = layer.rotate(roll, resample=Image.BICUBIC, expand=True)
+        canvas.alpha_composite(im, (int(cx - im.width / 2), int(cy - im.height / 2)))
+
+    back, _ = ring_layers(cx, cy, R, True, body="Norh", ring=S.NORH_RING, view=24)
+    put(back)
+    pl = sphere(load("Norh", "Color"), R, tilt=20, spin=130, glow=glow)
+    canvas.alpha_composite(pl, (int(cx - pl.width / 2), int(cy - pl.height / 2)))
+    front, _ = ring_layers(cx, cy, R, False, body="Norh", ring=S.NORH_RING, view=24)
+    put(front)
+    d = ImageDraw.Draw(canvas)
+    f = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 24)
+    d.text((40, H - 70), "Norh  1 207 km · 0.94 masas de Kerbin · 12 bar · anillos de hielo (1.45–2.05 R, 20°)",
+           font=f, fill=(225, 200, 170))
+    out = ROOT / "docs" / "norh" / "preview_norh_anillos.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
     canvas.convert("RGB").save(out)
     print(out)
 
@@ -189,3 +216,8 @@ if __name__ == "__main__":
     kraken_preview()
     for body in ("Scarch", "Tenebris", "Salus"):
         detalle(body, folder="docs/kraken")
+    norh_preview()
+    detalle("Norh", folder="docs/norh")
+    (ROOT / "docs" / "skolta").mkdir(exist_ok=True)
+    detalle("Skolta", folder="docs/skolta")
+    detalle("Ceniza", r=160, folder="docs/skolta")

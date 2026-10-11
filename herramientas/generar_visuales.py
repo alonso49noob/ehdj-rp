@@ -36,6 +36,12 @@ SCATTERER = {
                      betaR=(0.0200, 0.0400, 0.0800), mie=0.0158, mieG=0.85, ozone=False, eclipse=["Lumen"]),
     "Salus": dict(sun="Kraken", flat=True, load=3e8, unload=5e8, start=1, HR=5.5, HM=1.5,
                   betaR=(0.0250, 0.0450, 0.0750), mie=0.0200, mieG=0.85, ozone=False, eclipse=["Vestigia", "Nox"]),
+    # Norh: 12 bar con neblina fotoquímica de amoníaco: cielo ocre, mucha dispersión de Mie
+    "Norh": dict(sun="Sun", flat=True, load=3e8, unload=5e8, start=1, HR=11, HM=4,
+                 betaR=(0.0300, 0.0220, 0.0100), mie=0.0300, mieG=0.78, ozone=False, eclipse=[]),
+    # Skolta: "Titán cálido": cielo naranja oscuro con mucha bruma orgánica
+    "Skolta": dict(sun="Sun", flat=True, load=3e8, unload=5e8, start=1, HR=10, HM=6,
+                   betaR=(0.0280, 0.0180, 0.0080), mie=0.0400, mieG=0.75, ozone=False, eclipse=["Ceniza"]),
 }
 OCEANS = {  # upwelling = color del agua profunda; underwater = niebla submarina
     "Halum": dict(wind=4, amp=0.6, up=(0.004, 0.008, 0.020), under=(0.35, 0.50, 0.72), clear=120, n=1.09,
@@ -46,6 +52,10 @@ OCEANS = {  # upwelling = color del agua profunda; underwater = niebla submarina
                      caps=0.2, foam=1.2),
     "Salus": dict(wind=9, amp=1.0, up=(0.0025, 0.0070, 0.0080), under=(0.12, 0.30, 0.30), clear=50, n=1.38,
                   caps=0.25, foam=1.6),    # salmuera: espuma de sal en las costas
+    "Norh": dict(wind=6, amp=0.8, up=(0.004, 0.009, 0.010), under=(0.12, 0.24, 0.26), clear=30, n=1.36,
+                 caps=0.3, foam=1.0),      # agua con un 25 % de amoníaco a −40 °C: espesa y verdosa
+    "Skolta": dict(wind=5, amp=0.7, up=(0.004, 0.003, 0.002), under=(0.23, 0.19, 0.16), clear=60, n=1.35,
+                   caps=0.15, foam=0.8),   # NH3 con hidracina: incoloro; casi negro en lo profundo, refleja el cielo
 }
 
 # ------------------------------------------------------------------ EVE
@@ -56,6 +66,10 @@ EVE = {
     "Salus": dict(alt=2000, lo=2000, hi=8000, color=(228, 228, 224), fade=(120000, 160000), swap=True),
     "Scarch": dict(alt=3000, lo=3000, hi=12000, color=(140, 110, 100), fade=(130000, 170000), swap=False),
     "Creus": dict(alt=60000, lo=60000, hi=78000, color=(240, 244, 246), fade=(450000, 550000), swap=False),
+    "Norh": dict(alt=4000, lo=4000, hi=12000, color=(214, 178, 138), fade=(150000, 200000), swap=False,
+                 cover=0.45),      # aire saturado de NH3: muchas nubes
+    "Skolta": dict(alt=3000, lo=3000, hi=10000, color=(222, 206, 180), fade=(140000, 190000), swap=False,
+                   cover=0.60),    # nubes de NH3 crema casi continuas (ficha de Skolta)
 }
 OCEAN_SCALED = {"Halum": "#6b94cc", "Tenebris": "#0d0f12", "Salus": "#24484a"}   # color del mar visto desde órbita
 
@@ -63,8 +77,9 @@ OCEAN_SCALED = {"Halum": "#6b94cc", "Tenebris": "#0d0f12", "Salus": "#24484a"}  
 ALBEDO = {"Creus": 0.70, "Halum": 0.55, "Ocrea": 0.85, "Pastora": 0.05, "Prima": 0.15, "Secunda": 0.60,
           "Heraldo": 0.04, "Krax": 0.03, "Scarch": 0.35, "Tenebris": 0.12, "Salus": 0.30, "Vestigia": 0.12,
           "Nox": 0.02, "Lumen": 0.35, "Ignea": 0.15, "Fuligo": 0.01, "Caligo": 0.015, "Atra": 0.012,
-          "Azabache": 0.02, "Brea": 0.015, "Tizne": 0.012, "Escoria": 0.02, "Hollin": 0.01}
-THICK = {"Creus": 1.0, "Halum": 1.0, "Scarch": 1.0, "Tenebris": 0.6, "Salus": 0.6}
+          "Azabache": 0.02, "Brea": 0.015, "Tizne": 0.012, "Escoria": 0.02, "Hollin": 0.01, "Norh": 0.40, "Skolta": 0.35, "Ceniza": 0.09}
+THICK = {"Creus": 1.0, "Halum": 1.0, "Scarch": 1.0, "Tenebris": 0.6, "Salus": 0.6, "Norh": 1.0, "Skolta": 1.0}
+HAZE = {"Scarch": 0.65, "Norh": 0.70, "Skolta": 0.72}   # peso de la neblina horneada en _Color (generar_texturas)
 
 
 def img(body, kind, mode="RGB"):
@@ -90,10 +105,22 @@ def coverage(body):
         if body == "Salus":   # el hielo polar no es nube
             ice = np.abs(col - hexrgb(SALUS_ICE)).sum(axis=2) < 6
             cov = np.where(ice, 0.0, cov)
-    elif body == "Scarch":   # celdas de tormenta a partir de la neblina
-        haze = (col - 0.35 * img(body, "Surface")) / 0.65
+    elif body in HAZE:       # celdas de tormenta a partir de la neblina horneada
+        haze = (col - (1 - HAZE[body]) * img(body, "Surface")) / HAZE[body]
         lum = haze.mean(axis=2)
-        cov = np.clip((lum - np.quantile(lum, 0.55)) / (np.quantile(lum, 0.95) - np.quantile(lum, 0.55)), 0, 1)
+        hi = np.quantile(lum, 0.95)
+        ramp = lambda f: np.clip((lum - np.quantile(lum, f)) / (hi - np.quantile(lum, f)), 0, 1)
+        cov = ramp(0.55)
+        if "cover" in EVE[body]:            # fracción media de cielo cubierto (por área): umbral por bisección
+            w = np.cos(np.radians(90 - (np.arange(lum.shape[0]) + 0.5) / lum.shape[0] * 180))[:, None]
+            lo_f, hi_f = 0.0, 0.94
+            for _ in range(30):
+                mid = (lo_f + hi_f) / 2
+                cov = ramp(mid)
+                if (cov * w).sum() / (w * np.ones_like(cov)).sum() > EVE[body]["cover"]:
+                    lo_f = mid
+                else:
+                    hi_f = mid
     else:                    # Creus: las nubes de metano son lo más brillante
         lum = col.mean(axis=2)
         cov = np.clip((lum - np.quantile(lum, 0.3)) / (lum.max() - np.quantile(lum, 0.3)), 0, 1)

@@ -12,7 +12,7 @@ import sys
 import time
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 import sistema as S
 
@@ -27,6 +27,9 @@ HEIGHTMAPS = {
     "Prima":   dict(offset=-8000, deformity=16000),     # binario de contacto
     "Secunda": dict(offset=-4000, deformity=8000),
     "Heraldo": dict(offset=-1500, deformity=3000),
+    "Norh":     dict(offset=-2500, deformity=12000),     # mar ecuatorial −2 000 m … Gran Volcán +8 900 m
+    "Skolta":   dict(offset=-3500, deformity=12000),     # fondo del mar −3 200 m … montañas ~+8 km
+    "Ceniza":   dict(offset=-3000, deformity=7000),
     # sistema Kraken
     "Krax":     dict(offset=-1800, deformity=3600),
     "Scarch":   dict(offset=-4000, deformity=9000),
@@ -51,6 +54,7 @@ SITES = {
     "Krax/Fundicion": (20.0, -60.0),          # mina a cielo abierto de las máquinas
     "Tenebris/Asentamiento": (12.0, 35.0),    # meseta plana para la colonia (Kerbal Konstructs)
     "Tenebris/Restos": (-18.0, 140.0),        # cráter de la máquina derribada
+    "Norh/GranVolcan": (8.0, -50.0),          # isla volcánica de 9 km en el mar ecuatorial
 }
 
 # Colores de bioma (deben coincidir exactamente con los .cfg; validar_pack.py lo comprueba)
@@ -65,6 +69,12 @@ BIOMES = {
               "Glaciares de Neon": "#5fd0e0", "Campos de Fumarolas": "#e04070",
               "Polos de Escarcha": "#f8f8f8"},
     "_pequeno": {"Depresiones": "#304a70", "Llanuras": "#5f8f4f", "Crestas": "#d0b060"},
+    "Norh": {"Mar Ecuatorial": "#2a6a80", "Costas Heladas": "#c8b48c", "Llanuras de Lava": "#7a3c20",
+             "Volcanes": "#ff5a20", "Tundra de Amoniaco": "#a8a8c0", "Casquetes Polares": "#f0f0f0",
+             "Gran Volcan": "#ffd040"},
+    "Skolta": {"Mar": "#2050a0", "Bahias Azules": "#0020ff", "Costas": "#a05030", "Salinas": "#fff0c0",
+               "Llanuras": "#d09040", "Dunas": "#403020", "Tierras Altas": "#e0e0e0", "Montanas": "#808080",
+               "Campos Volcanicos": "#ffd000", "Yacimientos Metalicos": "#a040ff", "Casquetes Polares": "#c0ffff"},
     # sistema Kraken
     "Krax": {"Llanuras de Grafito": "#4a4a8a", "Escarpes Lobulados": "#8a6ad0",
              "Cuencas de Impacto": "#2a5a8a", "Crateres Jovenes": "#e0e0e0",
@@ -178,6 +188,14 @@ def swizzle_dxt5nm(rgb):
     Un PNG RGB normal se leería con alfa = 1 → X = +1 en todo el planeta: luz torcida y cuñas en los polos."""
     x, y = rgb[..., 0], rgb[..., 1]
     return np.dstack([np.full_like(x, 255), y, y, x])
+
+
+def wquantile(a, q, w):
+    """Cuantil ponderado (p. ej. por cos(lat): en un mapa equirectangular los polos tienen píxeles de más)."""
+    w = np.broadcast_to(w, a.shape).ravel()
+    order = np.argsort(a, axis=None)
+    cum = np.cumsum(w[order])
+    return a.ravel()[order][np.searchsorted(cum, q * cum[-1])]
 
 
 def biome_image(index, names, table):
@@ -396,6 +414,8 @@ SMALL = {
     "Tizne":    dict(seed=63, pal=["#171717", "#111111", "#0b0b0b"], ice=None),
     "Escoria":  dict(seed=64, pal=["#1c1714", "#15110f", "#0f0c0a"], ice=None),
     "Hollin":   dict(seed=65, pal=["#131313", "#0d0d0d", "#080808"], ice=None),
+    # Ceniza (luna de Skolta): arcillas amoniacadas gris pardo, como Ceres
+    "Ceniza":   dict(seed=66, pal=["#6a645c", "#58524c", "#46413c"], ice=None),
 }
 
 
@@ -582,10 +602,18 @@ def _f_hollin(h, c):       # la baliza: plataforma nivelada por las máquinas (0
     return h, d < 0.8, [(d < 0.25, "#3a3a40")]
 
 
+def _f_ceniza(h, c):       # Monte Solitario: domo criovolcánico aislado de laderas empinadas (como Ahuna Mons)
+    cc = unit(12, 75)
+    d = angdist(c["X"], cc) / 0.07
+    h = h + 0.45 * c["span"] * smooth(1.0, 0.65, d)
+    streaks = (d > 0.6) & (d < 1.5) & (fbm(c["n"], c["P"], (40, 40, 40), 2) > 0.15)
+    return h, d < 1.3, [(d < 0.7, "#8a847c"), (streaks, "#c8c4bc")]
+
+
 FEATURES = {"Pastora": _f_pastora, "Prima": _f_prima, "Secunda": _f_secunda, "Heraldo": _f_heraldo,
             "Vestigia": _f_vestigia, "Nox": _f_nox, "Lumen": _f_lumen, "Fuligo": _f_fuligo,
             "Caligo": _f_caligo, "Atra": _f_atra, "Azabache": _f_azabache, "Brea": _f_brea,
-            "Tizne": _f_tizne, "Escoria": _f_escoria, "Hollin": _f_hollin}
+            "Tizne": _f_tizne, "Escoria": _f_escoria, "Hollin": _f_hollin, "Ceniza": _f_ceniza}
 FEATURE_BIOMES = {"Pastora": ("Cresta Ecuatorial", "#e070e0"), "Prima": ("Cuello Brillante", "#f0e0c0"),
                   "Secunda": ("Acantilado Verona", "#40e0ff"), "Heraldo": ("Pozos Activos", "#ffffff"),
                   "Vestigia": ("Cuenca Multianillo", "#c04040"), "Nox": ("Gran Crater", "#a060ff"),
@@ -593,9 +621,211 @@ FEATURE_BIOMES = {"Pastora": ("Cresta Ecuatorial", "#e070e0"), "Prima": ("Cuello
                   "Caligo": ("Catena", "#ff8040"), "Atra": ("Extremos", "#ff4080"),
                   "Azabache": ("Facetas Vitreas", "#80c0ff"), "Brea": ("Charcos de Brea", "#806040"),
                   "Tizne": ("Campos de Bloques", "#a0a0a0"), "Escoria": ("Vesiculas", "#c06030"),
-                  "Hollin": ("Baliza", "#ff2020")}
+                  "Hollin": ("Baliza", "#ff2020"), "Ceniza": ("Monte Solitario", "#f0a0f0")}
 for _b, (_name, _col) in FEATURE_BIOMES.items():
     BIOMES[_b] = {**BIOMES["_pequeno"], _name: _col}
+
+
+# ================================================================== Norh (sistema de Kerbol)
+def norh():
+    """Mundo rocoso a −40 °C bajo 12 bar: banda ecuatorial de agua con amoníaco, polos helados, decenas de
+    volcanes y ningún cráter. El Gran Volcán es una isla de 9 km en el mar ecuatorial. Anillos de hielo."""
+    W, H = 4096, 2048
+    P, LAT, LON = grid(W, H)
+    X = np.dstack(P)
+    n, rng = Perlin(121), np.random.default_rng(121)
+    latn = np.abs(LAT) + 8 * fbm(n, P, (2.5, 2.5, 2.5), 5)            # borde irregular de la banda
+    band = smooth(24, 13, latn)                                         # 1 = mar ecuatorial
+    land = 450 + 650 * fbm(n, P, (1.4, 1.4, 1.4), 6) + 120 * fbm(n, P, (12, 12, 12), 4)
+    sea = -1700 + 450 * fbm(n, P, (2.2, 2.2, 2.2), 5)
+    h = land * (1 - band) + sea * band
+    polar_n = np.abs(LAT) + 6 * fbm(n, P, (3, 3, 3), 4)
+    h += 900 * smooth(58, 76, polar_n)                                  # mantos de hielo polares
+    flow = fbm(n, P, (25, 25, 25), 3)
+    lava, vents, volc = (np.zeros(h.shape, bool) for _ in range(3))
+    placed = 0
+    while placed < 70:                                                  # volcanes en escudo con caldera
+        c = random_unit(rng)
+        if abs(c[2]) > np.sin(np.radians(60)):
+            continue
+        r = rng.uniform(0.015, 0.06)
+        d = angdist(X, c) / r
+        peak = 2600 * (r / 0.06) ** 0.8
+        h += peak * np.clip(1 - d, 0, 1) ** 1.6 - np.where(d < 0.15, 0.3 * peak * (1 - (d / 0.15) ** 2), 0)
+        volc |= d < 0.8
+        lava |= (d < 2.0) & (flow > 0.05 + 0.12 * d)
+        if rng.random() < 0.3:                                          # activos: lava en la caldera
+            vents |= d < 0.07
+        placed += 1
+    cg = unit(*SITES["Norh/GranVolcan"])
+    dg = angdist(X, cg) / 0.15
+    h += 12000 * np.clip(1 - dg, 0, 1) ** 1.3 - np.where(dg < 0.1, 1200 * (1 - (dg / 0.1) ** 2), 0)
+    lava |= (dg < 1.6) & (flow > 0.0 + 0.1 * dg)
+    vents |= dg < 0.03
+    h = np.clip(h, -2490, 9490)
+    save(encode_height(h, "Norh"), "Norh", "Height")
+
+    h2 = downsample(h, 2)
+    band2, latn2, polar2 = downsample(band, 2), downsample(latn, 2), downsample(polar_n, 2)
+    lava2, vents2, volc2 = (downsample(m.astype(np.float32), 2) > 0.5 for m in (lava, vents, volc))
+    gran2 = downsample((dg < 1.0).astype(np.float32), 2) > 0.5
+    P2, LAT2, _ = grid(W // 2, H // 2)
+    sea2 = h2 < 0
+    rock = posterize(h2 + 300 * fbm(n, P2, (10, 10, 10), 3), ["#6e4a34", "#5c3e2c", "#4a3224"], [0.3, 0.4, 0.3])
+    surf = np.where(sea2[..., None], posterize(h2, ["#33403f", "#26302f"], [0.5, 0.5]), rock)
+    shore = ~sea2 & (band2 > 0.03) & (h2 < 700)
+    surf = np.where(shore[..., None], hexrgb("#8a7a68"), surf)
+    tundra = ~sea2 & ~shore & (latn2 > 27) & (fbm(n, P2, (6, 6, 6), 4) > -0.05)
+    surf = np.where(tundra[..., None], np.where((fbm(n, P2, (20, 20, 20), 2) > 0)[..., None],
+                                                hexrgb("#b4aca4"), hexrgb("#a29a92")), surf)
+    lava_l = lava2 & ~sea2
+    surf = np.where(lava_l[..., None], hexrgb("#33241c"), surf)
+    polar = polar2 > 62
+    surf = np.where(polar[..., None], np.where((fbm(n, P2, (8, 8, 8), 3) > 0)[..., None],
+                                               hexrgb("#dfe6ea"), hexrgb("#cdd6dc")), surf)
+    surf = np.where((~sea2 & (h2 > 5000))[..., None], hexrgb("#d6d0ca"), surf)    # nieve de amoníaco en la cima
+    surf = np.where((vents2 & ~sea2)[..., None], hexrgb("#e8702a"), surf)
+    save(surf, "Norh", "Surface")
+
+    haze = fbm(n, P2, (1.5, 1.5, 7.0), 5)
+    hazecol = posterize(haze, ["#a06a34", "#8e5c2a", "#7a4e22"], [0.3, 0.45, 0.25])
+    hazecol = hazecol + (hexrgb("#c49a6a") - hazecol) * (0.5 * smooth(50, 80, np.abs(LAT2)))[..., None]
+    save(0.70 * hazecol + 0.30 * surf, "Norh", "Color")         # vista lejana: neblina ocre
+    tone = posterize(haze, ["#ffffff", "#808080", "#000000"], [0.3, 0.45, 0.25])[..., 0]
+    save(normal_map(tone * 10.0, S.BODIES["Norh"]["radius"], 1.0), "Norh", "Normal")
+
+    names = list(BIOMES["Norh"])
+    idx = np.select([gran2, polar, sea2, shore, volc2 | lava_l, tundra], [6, 5, 0, 1, 3, 4], 2)
+    save(biome_image(idx[::2, ::2], names, BIOMES["Norh"]), "Norh", "Biomes")
+
+    # Anillos de hielo (tira: u = 0 borde exterior, u = 1 interior). Borde interior gris, cuerpo azul hielo.
+    x = 1 - (np.arange(1024) + 0.5) / 1024                              # 0 interior … 1 exterior
+    alpha = 0.9 * smooth(0.0, 0.08, x) * smooth(1.0, 0.82, x)
+    alpha *= 0.7 + 0.3 * np.abs(np.sin(x * 53) * np.sin(x * 17 + 0.5))   # anillos finos
+    alpha *= 1 - 0.8 * np.exp(-((x - 0.30) / 0.015) ** 2)               # división
+    t = smooth(0.0, 0.35, x)[:, None]
+    col = hexrgb("#7d8f9c") * (1 - t) + hexrgb("#bcd8ea") * t
+    ring = np.zeros((8, 1024, 4), np.uint8)
+    ring[..., :3] = col.astype(np.uint8)[None]
+    ring[..., 3] = (alpha * 255).astype(np.uint8)
+    save(Image.fromarray(ring, "RGBA"), "Norh", "Ring")
+
+
+# ================================================================== Skolta (sistema de Kerbol)
+def skolta():
+    """Titán cálido: mar pálido de amoníaco con hidracina (65 %), un continente grande de tierras altas al norte
+    y otro menor al sur, dunas oscuras entre 15° y 35°, pocos campos volcánicos con bahías azules de azufre,
+    yacimientos de cobre y níquel azules y casquetes de escarcha. Desde el espacio, casi todo es bruma naranja."""
+    W, H = 4096, 2048
+    P, LAT, LON = grid(W, H)
+    X = np.dstack(P)
+    n, rng = Perlin(131), np.random.default_rng(131)
+
+    def blob(lat, lon, wlat, wlon):                                     # continente alargado en longitud (grados)
+        dlon = (LON - lon + 180) % 360 - 180
+        return np.exp(-((LAT - lat) / wlat) ** 2 - (dlon * np.cos(np.radians(LAT)) / wlon) ** 2)
+
+    isl = np.clip(fbm(n, P, (5, 5, 5), 5) - 0.12, 0, None) * smooth(20, 8, np.abs(LAT))   # archipiélagos ecuatoriales
+    cont = (0.55 * fbm(n, P, (1.5, 1.5, 1.5), 7) + 0.9 * blob(45, -20, 24, 50) + 0.7 * blob(-42, 120, 17, 30)
+            + 1.6 * isl + 0.35 * smooth(70, 82, np.abs(LAT)))           # tierras polares bajas para los casquetes
+    t = wquantile(cont, 0.65, np.cos(np.radians(LAT)))                  # 65 % de mar por ÁREA, no por píxeles
+    land = cont > t
+    hl = np.clip((cont - t) / (cont.max() - t), 0, 1)
+    ridge = fbm(n, P, (4, 4, 4), 6, ridged=True)
+    high_zone = smooth(0.25, 0.55, hl)                                  # interior de los continentes
+    h = np.where(land, 60 + 1400 * hl ** 0.8 + 6500 * smooth(0.5, 0.85, ridge) * high_zone
+                 + 150 * fbm(n, P, (14, 14, 14), 3),
+                 -3200 * np.clip((t - cont) / (t - cont.min()), 0, 1) ** 0.6)    # somero en la costa, hondo en el centro
+    # Campos volcánicos: pocos, en el contacto entre tierras altas y cuencas
+    vfield, vcenters = np.zeros(h.shape, bool), []
+    while len(vcenters) < 5:                                            # el primero, en un archipiélago ecuatorial
+        c = random_unit(rng)
+        y, x = pixel_of(c, W, H)
+        ok = (isl[y, x] > 0.02 and abs(LAT[y, x]) < 12) if not vcenters else (0.12 < hl[y, x] < 0.35 and abs(LAT[y, x]) < 60)
+        if land[y, x] and ok and all(float(c @ v) < np.cos(0.4) for v in vcenters):
+            vcenters.append(c)
+    for c in vcenters:
+        for _ in range(4):                                              # 4 conos por campo
+            cc = c + rng.normal(scale=0.03, size=3).astype(np.float32)
+            cc /= np.linalg.norm(cc)
+            r = rng.uniform(0.012, 0.025)
+            d = angdist(X, cc) / r
+            h += 1800 * (r / 0.025) * np.clip(1 - d, 0, 1) ** 1.5 - np.where(d < 0.15, 300, 0)
+        vfield |= angdist(X, c) < 0.07
+    bays = ~land & np.any([angdist(X, c) < 0.16 for c in vcenters], axis=0)     # azufre disuelto: azul oscuro
+    metal = np.zeros(h.shape, bool)
+    placed = 0
+    while placed < 4:                                                   # yacimientos de cobre y níquel, escasos
+        c = random_unit(rng)
+        y, x = pixel_of(c, W, H)
+        if land[y, x] and hl[y, x] < 0.5 and abs(LAT[y, x]) < 65:
+            metal |= angdist(X, c) < 0.018
+            placed += 1
+    h = np.clip(h, -3490, 8490)
+    save(encode_height(h, "Skolta"), "Skolta", "Height")
+
+    h2 = downsample(h, 2)
+    hz2 = downsample(high_zone, 2)
+    vfield2, bays2, metal2 = (downsample(m.astype(np.float32), 2) > 0.5 for m in (vfield, bays, metal))
+    P2, LAT2, LON2 = grid(W // 2, H // 2)
+    X2 = np.dstack(P2)
+    sea2 = h2 < 0
+    slope = np.abs(np.gradient(h2, axis=0)) + np.abs(np.gradient(h2, axis=1))
+    # Mar: el NH3 con hidracina es INCOLORO; toma el color del fondo (ficha, "Color del mar").
+    # Somero: crema sobre arena y salinas; profundo: casi negro (#3A3028), sin el azul del agua.
+    depth = np.clip(-h2, 0, None)
+    surf = hexrgb("#D6CDB2") + (hexrgb("#3A3028") - hexrgb("#D6CDB2")) * smooth(80, 900, depth)[..., None]
+    surf = np.where(bays2[..., None], hexrgb("#2F4C9E"), surf)                  # bahías con azufre disuelto
+    # Tierra: llanuras ocre con manchas naranja y amarillas cerca de los volcanes
+    plains = posterize(fbm(n, P2, (8, 8, 8), 4), ["#C98C50", "#b97c44"], [0.5, 0.5])
+    near_v = np.any([angdist(X2, c) < 0.2 for c in vcenters], axis=0)
+    tint = vfield2 | (near_v & (fbm(n, P2, (12, 12, 12), 3) > 0.1))
+    plains = np.where(tint[..., None], np.where((fbm(n, P2, (20, 20, 20), 2) > 0)[..., None],
+                                                hexrgb("#D9742A"), hexrgb("#E0A52A")), plains)
+    highc = posterize(fbm(n, P2, (10, 10, 10), 3), ["#F2F0EA", "#EDEBE5"], [0.5, 0.5])
+    veins = np.abs(fbm(n, P2, (16, 16, 16), 3)) < 0.02
+    highc = np.where(veins[..., None], hexrgb("#B5CDB0"), highc)
+    steep = slope > np.quantile(slope[~sea2], 0.85)
+    highc = np.where(steep[..., None], hexrgb("#C4C1B9"), highc)
+    landc = np.where((hz2 > 0.5)[..., None], highc, plains)
+    mountains = ~sea2 & (h2 > 3500)
+    landc = np.where(mountains[..., None], np.where((slope > np.quantile(slope[~sea2], 0.7))[..., None],
+                                                    hexrgb("#C4C1B9"), hexrgb("#d8d5cd")), landc)
+    dunes = ~sea2 & (np.abs(LAT2) > 15) & (np.abs(LAT2) < 35) & (hz2 < 0.3) & (fbm(n, P2, (3, 3, 3), 4) > -0.05)
+    stripes = np.sin(np.radians(LON2) * 90 + 3 * fbm(n, P2, (6, 6, 6), 3)) > 0
+    landc = np.where(dunes[..., None], np.where(stripes[..., None], hexrgb("#4A3326"), hexrgb("#2E1F18")), landc)
+    coast = ~sea2 & (h2 < 200) & ~dunes
+    salinas = coast & (fbm(n, P2, (9, 9, 9), 3) > 0.05)
+    landc = np.where(coast[..., None], hexrgb("#9A5A38"), landc)
+    landc = np.where(salinas[..., None], hexrgb("#F3ECDB"), landc)
+    landc = np.where(metal2[..., None], np.where((fbm(n, P2, (60, 60, 60), 1) > 0)[..., None],
+                                                 hexrgb("#4E7BE0"), hexrgb("#7A5CC8")), landc)
+    near = lambda m, px: np.asarray(Image.fromarray((m * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(px))) > 0
+    shallow = sea2 & (depth < 300)
+    surf = np.where((shallow & near(dunes, 9) & ~bays2)[..., None], hexrgb("#4A3326"), surf)    # sobre sedimento orgánico
+    surf = np.where((shallow & near(metal2, 15))[..., None], hexrgb("#4E7BE0"), surf)           # cobre/níquel: sin hidracina
+    surf = np.where(sea2[..., None], surf, landc)
+    polar = np.abs(LAT2) + 5 * fbm(n, P2, (3, 3, 3), 4) > 74
+    surf = np.where(polar[..., None], hexrgb("#efe6cf"), surf)
+    save(surf, "Skolta", "Surface")
+
+    # Vista lejana: como Titán, bruma naranja con manchas borrosas. El mar refleja el cielo naranja:
+    # gris ámbar mar adentro, con el borde claro de los fondos someros.
+    haze = fbm(n, P2, (1.2, 1.2, 5.0), 5)
+    hazecol = posterize(haze, ["#D68B52", "#C07A48", "#A86C3F"], [0.3, 0.45, 0.25])
+    seen = np.where(sea2[..., None], np.where((depth < 150)[..., None], hexrgb("#D6CDB2"), hexrgb("#8C7A62")), surf)
+    blur = np.asarray(Image.fromarray(seen.astype(np.uint8)).resize((W // 16, H // 16), Image.BILINEAR)
+                      .resize((W // 2, H // 2), Image.BICUBIC), np.float32)
+    col = 0.72 * hazecol + 0.28 * blur
+    col = np.where(polar[..., None], 0.5 * col + 0.5 * hexrgb("#efe6cf"), col)
+    save(col, "Skolta", "Color")
+    tone = posterize(haze, ["#ffffff", "#808080", "#000000"], [0.3, 0.45, 0.25])[..., 0]
+    save(normal_map(tone * 10.0, S.BODIES["Skolta"]["radius"], 1.0), "Skolta", "Normal")
+
+    names = list(BIOMES["Skolta"])
+    idx = np.select([polar, metal2, vfield2 & ~sea2, bays2, sea2, salinas, coast, dunes, mountains, hz2 > 0.5],
+                    [10, 9, 8, 1, 0, 3, 2, 5, 7, 6], 4)
+    save(biome_image(idx[::2, ::2], names, BIOMES["Skolta"]), "Skolta", "Biomes")
 
 
 # ================================================================== sistema Kraken
@@ -924,7 +1154,7 @@ def kraken():
     save(Image.fromarray((np.dstack(chans) * 255).astype(np.uint8), "RGB"), "Kraken", "Noise")
 
 
-JOBS = {"Creus": creus, "Halum": halum, "Ocrea": ocrea,
+JOBS = {"Creus": creus, "Halum": halum, "Ocrea": ocrea, "Norh": norh, "Skolta": skolta,
         "Kraken": kraken, "Krax": krax, "Scarch": scarch, "Tenebris": tenebris, "Salus": salus, "Ignea": ignea,
         **{b: (lambda b=b: small(b)) for b in SMALL}}
 

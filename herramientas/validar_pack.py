@@ -216,7 +216,7 @@ def main():
             exp = HEIGHTMAPS[name]
             if (num(hm.get("offset")), num(hm.get("deformity"))) != (exp["offset"], exp["deformity"]):
                 errors.append(f"{where}: offset/deformity no coinciden con generar_texturas.HEIGHTMAPS")
-        allowed = {"Creus": [S.RING], "Kraken": list(S.KRAKEN_DISKS.values())}.get(name, [])
+        allowed = {"Creus": [S.RING], "Kraken": list(S.KRAKEN_DISKS.values()), "Norh": [S.NORH_RING]}.get(name, [])
         rings = b.node("Rings").all("Ring") if b.node("Rings") else []
         for ring in rings:
             check_texture(ring.get("texture"), where)
@@ -268,6 +268,19 @@ def main():
                     gap = abs(oa["a"] - ob["a"]) - (oa["a"] * oa["e"] + ob["a"] * ob["e"])
                 if gap < S.soi(a) + S.soi(b):
                     errors.append(f"SOI solapadas: {a} y {b} (separación mínima {gap:.3e} m)")
+    # Cuerpos del pack que orbitan Kerbol (salvo cometas): sin cruzar las órbitas de los planetas stock
+    STOCK = {"Moho": (5263138304, 0.2, 9646663), "Eve": (9832684544, 0.01, 85109365),
+             "Kerbin": (13599840256, 0.0, 84159286), "Duna": (20726155264, 0.051, 47921949),
+             "Dres": (40839348203, 0.145, 32832840), "Jool": (68773560320, 0.05, 2455985200),
+             "Eeloo": (90118820000, 0.26, 119082940)}
+    for name, r in S.BODIES.items():
+        o = r["orbit"]
+        if r["parent"] != "Sun" or o["e"] > 0.5:
+            continue
+        lo, hi = o["a"] * (1 - o["e"]) - S.soi(name), o["a"] * (1 + o["e"]) + S.soi(name)
+        for st, (a, e, soi) in STOCK.items():
+            if lo < a * (1 + e) + soi and hi > a * (1 - e) - soi:
+                errors.append(f"{name}: su órbita cruza la de {st}")
 
     # ---- textos de ciencia: cuerpo + situación (+ bioma existente)
     from generar_texturas import BIOMES
@@ -293,6 +306,27 @@ def main():
                for n in top.nodes for m in [re.match(r"@Body\[(\w+)\]", n.name)] if m}
     for body in sorted(with_scatters - patched):
         errors.append(f"Parallax: {body} tiene scatters pero no el PQSMod Parallax (Parallax_PQS.cfg)")
+
+    # Respaldo de CTTP (generar_terreno.py): sin CTTP instalado, cada ruta de CTTP necesita su textura propia
+    fallback = {}
+    for top in roots.get("Respaldo_CTTP.cfg", Node("")).nodes:
+        for n in top.nodes:
+            m = re.match(r"@Body\[(\w+)\]", n.name)
+            mat = n.node("@PQS").node("@Material") if m and n.node("@PQS") else None
+            if mat:
+                fallback[m.group(1)] = {k.lstrip("@"): v for k, v in mat.values}
+    for name, (b, key) in sorted(bodies.items()):
+        pqs = b.node("PQS")
+        for k, v in pqs.node("Material").values if pqs and pqs.node("Material") else []:
+            if not v.startswith("CTTP/"):
+                continue
+            alt = fallback.get(name, {}).get(k)
+            if not alt:
+                errors.append(f"{key} [{name}]: {k} usa CTTP sin respaldo (ejecuta generar_terreno.py)")
+            elif not (GAMEDATA / alt).exists():
+                errors.append(f"Respaldo_CTTP.cfg [{name}]: no existe {alt}")
+            elif "BumpMap" in k and np.asarray(Image.open(GAMEDATA / alt).convert("RGBA"))[..., 0].mean() < 250:
+                errors.append(f"Respaldo_CTTP.cfg [{name}]: {alt} no está en formato DXT5nm")
 
     for w in warnings:
         print("AVISO:", w)

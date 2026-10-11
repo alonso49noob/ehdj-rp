@@ -48,6 +48,24 @@ BODIES = {
         system="CreusHalum", parent="Sun", radius=5_000, gee=0.002, template="Gilly",
         orbit=None,  # se calcula abajo
     ),
+    # ------------------------------------------------------------------ Norh (sistema de Kerbol)
+    # Planeta rocoso entre Dres y Jool: 0.94 masas de Kerbin, 1 207 km de diámetro, 12 bar de N2/H2/NH3.
+    # Banda ecuatorial de agua con amoníaco líquida a −40 °C, polos helados, volcanes y anillos de hielo.
+    "Norh": dict(
+        system="Kerbol", parent="Sun", radius=603_500, gee=0.9294,   # 0.94 × μ de Kerbin (3.5316e12) / R²
+        template="Laythe",
+        orbit=dict(a=4 * KAU, e=0.035, i=2.1, lan=140, argpe=60, M0=2.6),
+    ),
+    # Skolta: "Titán cálido" entre Duna y Dres (ficha del equipo, 2026-10-11). Año de 365.25 días de 24 h,
+    # 0.75 g, 650 km, 4 bar de N2 + NH3 + CH4, mar de amoníaco con hidracina (65 % de la superficie).
+    "Skolta": dict(
+        system="Kerbol", parent="Sun", radius=650_000, gee=0.75, template="Laythe",
+        orbit=None,  # a se calcula abajo a partir del año de 365.25 días de 24 h
+    ),
+    "Ceniza": dict(  # luna de Skolta (propuesta de la ficha): cuerpo del cinturón capturado, arcillas amoniacadas
+        system="Kerbol", parent="Skolta", radius=175_000, gee=0.10, template="Mun",
+        orbit=dict(a=13_500_000, e=0.02, i=18, lan=60, argpe=0, M0=2.0),
+    ),
     # ------------------------------------------------------------------ sistema Kraken
     # Enana marrón T2 (~1 250 K, ~400 Myr) a 2 años luz kerbales. 22 masas de Jool, 1.05 R_Jool.
     "Kraken": dict(
@@ -114,7 +132,13 @@ BODIES["Heraldo"]["orbit"] = dict(
     M0=(-_n * 3 * KERBIN_YEAR) % (2 * math.pi),
 )
 
+# Skolta: el año (365.25 días de 24 h) fija el semieje: a = (μ T² / 4π²)^(1/3) ≈ 30.9 Gm
+SKOLTA_YEAR = 365.25 * 86_400
+BODIES["Skolta"]["orbit"] = dict(a=(MU_SUN * SKOLTA_YEAR**2 / (4 * math.pi**2)) ** (1 / 3),
+                                 e=0.05, i=19, lan=230, argpe=40, M0=0.7)
+
 RING = dict(inner=1485, outer=1715)   # milésimas del radio de Creus (medido en la imagen)
+NORH_RING = dict(inner=1450, outer=2050, angle=20)   # anillos de hielo de Norh (milésimas de su radio), inclinados 20°
 # Discos de Kraken (milésimas de su radio). Todos sin iluminación y sin desvanecimiento, visibles en el mapa.
 def _disk(inner_km, outer_km):
     return dict(inner=round(inner_km * 1e3 / 6_300_000 * 1000), outer=round(outer_km * 1e3 / 6_300_000 * 1000))
@@ -147,6 +171,18 @@ ATMOS = {
     # Salus: N2/CO2/H2O con trazas de H2 (la serpentinización lo hizo pasar por hiceano)
     "Salus": dict(p0_atm=2.0, T0=268.0, M=0.0291, gamma=1.39, kappa=0.19,
                   T_tropo=200.0, T_top=240.0, p_top_atm=1e-6, iso_until_atm=None),
+    # Norh: 45 % N2, 23 % H2, 32 % NH3 a 12 bar. M = 0.45·28.01 + 0.23·2.016 + 0.32·17.03 = 18.5 g/mol.
+    # El invernadero por colisiones H2–N2 lo mantiene a −40 °C en el ecuador a 4 KAU de Kerbol.
+    # El amoníaco satura el aire: el gradiente es suave (kappa bajo) y hay nubes de NH3.
+    # lat_bias: (latitud, ΔT en K) sobre T0, que es la temperatura del ecuador; los polos rondan −75 °C.
+    "Norh": dict(p0_atm=12.0 / 1.01325, T0=233.0, M=0.01852, gamma=1.36, kappa=0.20,
+                 T_tropo=105.0, T_top=160.0, p_top_atm=1e-6, iso_until_atm=None,
+                 lat_bias=[(0, 0.0), (20, -4.0), (35, -14.0), (55, -28.0), (90, -36.0)]),
+    # Skolta: 76 % N2, 21 % NH3, 3 % CH4 a 4 bar (M = 25.4 g/mol). Ecuador a 238 K, polos a ~212 K (media ~230 K).
+    # Estratosfera templada por la bruma orgánica, como en Titán.
+    "Skolta": dict(p0_atm=4.0 / 1.01325, T0=238.0, M=0.02535, gamma=1.37, kappa=0.20,
+                   T_tropo=140.0, T_top=175.0, p_top_atm=1e-6, iso_until_atm=None,
+                   lat_bias=[(0, 0.0), (30, -4.0), (60, -16.0), (90, -26.0)]),
 }
 
 
