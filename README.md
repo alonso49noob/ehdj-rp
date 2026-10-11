@@ -111,7 +111,9 @@ herramientas/
   previsualizar.py         vistas previas de docs/
   generar_terreno.py       texturas de detalle de respaldo y su parche, para cuando falta CTTP
   validar_pack.py          comprobación completa sin abrir KSP
+  construir.py             versión instalable con DDS en build/ (y --instalar: la copia a KSP)
   empaquetar.py            zip para playtesters: Descargas/ehdj_rp-v<versión>.zip
+arte/                      fuentes del artista que usan los generadores (Kraken_Textura.png)
 docs/
   CONCEPTO_CREUS_HALUM.md  historia, estructura interna y lugares con nombre
   DISENO.md / TEXTURAS.md  Creus–Halum
@@ -170,8 +172,16 @@ Ejecútalo antes de cada prueba en el juego. Comprueba:
 - las claves de ciencia.
 
 ```bash
+python herramientas/construir.py --instalar
+```
+Construye la versión instalable en `build/GameData/MundosLejanos` y la copia al GameData de KSP.
+- Las fuentes siguen en PNG. Aquí se pasan a DDS (DXT5 o DXT1, con mipmaps y volteados como exige KSP) las texturas que van a la GPU: vista lejana, normales, anillos, estrella y detalle del terreno.
+- Siguen en PNG los mapas que KSP lee en la CPU: alturas, biomas y mapas de color del terreno.
+- En la copia se reescriben las rutas de los .cfg. **Instala siempre así**: copiar `GameData/MundosLejanos` a mano dejaría las texturas en PNG.
+
+```bash
 python herramientas/empaquetar.py
 ```
-Crea el zip para los playtesters en tu carpeta de Descargas: `ehdj_rp-v<versión>.zip`.
+Crea el zip para los playtesters en tu carpeta de Descargas: `ehdj_rp-v<versión>.zip`. Usa la versión con DDS de `build/`.
 - La versión sale del archivo `VERSION` y sube sola tras cada zip (0.0.120, 0.0.121…).
 - Antes de empaquetar pasa el validador: si hay errores, no crea el zip.

@@ -163,14 +163,13 @@ def kraken_star(r):
     lat, lon = np.arcsin(np.clip(yw, -1, 1)), np.arctan2(x, zw)
     H, W = bands.shape
     b = bands[np.clip(((0.5 - lat / np.pi) * H).astype(int), 0, H - 1), ((lon / (2 * np.pi) + 0.5) * W).astype(int) % W]
-    c0, c1 = np.array([0.17, 0.04, 0.05]) * 255, np.array([0.34, 0.08, 0.09]) * 255
-    spot = np.array([0.05, 0.01, 0.012]) * 255
-    col = c0 + (c1 - c0) * b[..., None]
-    col = col * b[..., None] ** 0.4 + spot * (1 - b[..., None] ** 0.4)                # cinturones oscuros
+    c0, c1 = np.array([0.80, 0.25, 0.34]) * 255, np.array([0.87, 0.27, 0.37]) * 255  # emitColor0/1 (Kraken.cfg)
+    spot = np.array([0.15, 0.05, 0.08]) * 255                                         # sunspotColor
+    col = spot + ((c0 + c1) / 2 - spot) * b[..., None]                                # sunspotPower = 1
     col = col * (0.55 + 0.45 * z[..., None])                                           # oscurecimiento de borde
     halo = np.clip(1 - (d - 1) / 0.25, 0, 1) ** 2.5 * (d > 1)
     out = np.zeros((size, size, 4), np.float32)
-    out[..., :3] = np.where(inside[..., None], col, np.array([61, 13, 13], np.float32))
+    out[..., :3] = np.where(inside[..., None], col, np.array([115, 31, 46], np.float32))
     out[..., 3] = np.where(inside, 255, halo * 140)
     return Image.fromarray(out.clip(0, 255).astype(np.uint8), "RGBA")
 

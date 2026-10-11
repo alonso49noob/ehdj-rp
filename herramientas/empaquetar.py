@@ -3,7 +3,8 @@
 La próxima versión está en VERSION (raíz del proyecto). Cada zip creado sube el último número
 (0.0.120 -> 0.0.121). Antes de empaquetar pasa validar_pack.py: si hay errores, no crea nada.
 
-Contenido: GameData/MundosLejanos, LEEME_PLAYTEST.md (con la versión en el título) y capturas/.
+Contenido: build/GameData/MundosLejanos (la versión con DDS que hace construir.py), LEEME_PLAYTEST.md
+(con la versión en el título) y capturas/.
 Uso:  python herramientas/empaquetar.py
 """
 import os
@@ -14,6 +15,7 @@ import sys
 import winreg
 import zipfile
 
+import construir
 import sistema as S
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -40,6 +42,7 @@ def main():
     if subprocess.run([sys.executable, str(ROOT / "herramientas" / "validar_pack.py")]).returncode:
         sys.exit("El validador encontró errores: no se empaqueta.")
 
+    build = construir.build()                                   # PNG -> DDS en build/GameData/MundosLejanos
     out = descargas() / f"ehdj_rp-v{version}.zip"
     if out.exists():
         sys.exit(f"Ya existe {out}: sube VERSION o bórralo antes.")
@@ -47,9 +50,9 @@ def main():
     leeme = re.sub(r"^# Mundos Lejanos — versión de prueba.*$", f"# Mundos Lejanos — versión de prueba v{version}",
                    leeme, count=1, flags=re.M)
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-        for f in sorted((ROOT / "GameData" / S.PACK).rglob("*")):
+        for f in sorted(build.rglob("*")):
             if f.is_file():
-                z.write(f, f.relative_to(ROOT).as_posix())
+                z.write(f, f.relative_to(build.parents[1]).as_posix())     # GameData/MundosLejanos/...
         z.writestr("LEEME_PLAYTEST.md", leeme)
         for src, dst in CAPTURAS.items():
             if (ROOT / src).exists():

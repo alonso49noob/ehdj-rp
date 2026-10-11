@@ -48,10 +48,10 @@ INFO = {
         "Paleta #d8e0e6, #b8c4cc, #9aa8b2. h = −4000 + gris × 8000."]),
     "Heraldo": ("Cometa: costra negra con manchas de hielo.", [
         "Paleta #3a3430, #2a2624, #1c1918 con manchas de hielo #c8d4dc (~5 %). h = −1500 + gris × 3000."]),
-    "Kraken": ("Enana T2: gigante gaseoso incandescente granate oscuro, sin corona.", [
+    "Kraken": ("Enana T2: gigante gaseoso incandescente rosa y granate, sin corona (textura del artista).", [
         "El shader de estrella no usa textura de color: usa Kraken_Bands (sunspotTex) y Kraken_Noise (noiseMap).",
         "Bands: gris, zonas claras = blanco, cinturones = oscuro, huecos ovales en las nubes. Noise: vetas finas en latitud.",
-        "Colores fijados en el .cfg: emitColor0 #2b0a0d → emitColor1 #571417; cinturones hacia #0d0303; halo #3d0d0d.",
+        "Colores fijados en el .cfg: Fuente: arte/Kraken_Textura.png. emitColor0 #cc4057 → emitColor1 #de455e; bandas oscuras hacia #260d14; halo #731f2e.",
         "Discos (tiras 2048×16 RGBA): interior #b8643a; protoplanetario #8c6a62 con hueco a 250 000 km (Ignea); Cinturón Oscuro #20181c casi invisible."]),
     "Krax": ("Mundo de carbono tipo Mercurio, casi negro (albedo 0.03).", [
         "Grafito en 4 tonos (#3a3a42 → #141417) con brillo metálico; 4 cráteres jóvenes con rayos #4a4a55.",

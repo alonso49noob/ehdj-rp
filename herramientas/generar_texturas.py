@@ -1499,11 +1499,26 @@ def kraken():
     save(disk_strip(a, "#1e1816"), "Kraken", "DarkBelt")
 
     # Superficie de enana T para el shader de estrella (sunspotTex = bandas, noiseMap = turbulencia).
-    # Las enanas T son gigantes gaseosos incandescentes: zonas claras y cinturones oscuros de nubes
-    # de sulfuros y sales, con huecos por donde asoma el interior más caliente (variabilidad real).
+    # El shader no admite una textura de color: mezcla emitColor0/1 y oscurece hacia sunspotColor donde la
+    # máscara es oscura. Con la textura del artista (arte/Kraken_Textura.png), la máscara es su brillo y los tres
+    # colores del .cfg son sus tonos claro, medio y oscuro.
+    n = Perlin(111)
+    art = ROOT / "arte" / "Kraken_Textura.png"
+    if art.exists():
+        a = np.asarray(Image.open(art).convert("RGB"), np.float32)
+        lum = a @ np.array([0.299, 0.587, 0.114], np.float32)
+        lo, hi = np.quantile(lum, [0.01, 0.99])
+        g = (np.clip((lum - lo) / (hi - lo), 0, 1) * 255 + 0.5).astype(np.uint8)
+        save(Image.fromarray(np.dstack([g, g, g]), "RGB"), "Kraken", "Bands")
+        P2, _, _ = grid(1024, 512)
+        fine = fbm(n, P2, (6.0, 6.0, 40.0), 5)
+        chans = [np.clip(0.5 + 1.6 * f, 0, 1) for f in (fine, fbm(n, P2, (9.0, 9.0, 55.0), 4), fbm(n, P2, (4.0, 4.0, 25.0), 4))]
+        save(Image.fromarray((np.dstack(chans) * 255).astype(np.uint8), "RGB"), "Kraken", "Noise")
+        return
+    # Sin textura del artista: bandas procedurales. Las enanas T son gigantes gaseosos incandescentes: zonas claras
+    # y cinturones oscuros de nubes de sulfuros y sales, con huecos por donde asoma el interior más caliente.
     W, H = 2048, 1024
     P, LAT, LON = grid(W, H)
-    n = Perlin(111)
     latw = LAT + 4.5 * fbm(n, P, (2.5, 2.5, 6.0), 5)                       # bordes de banda turbulentos
     belts = 0.5 + 0.5 * np.sin(np.radians(latw) * 14 + 0.6 * np.sin(np.radians(latw) * 5))
     belts = belts * smooth(88, 60, np.abs(LAT)) + 0.6 * (1 - smooth(88, 60, np.abs(LAT)))   # polos difusos

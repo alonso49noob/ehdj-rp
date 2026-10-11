@@ -100,6 +100,58 @@ PLAN = {
     "Atra": [("Dres", "MedRocksVar1", "BloquesNegros", (0.10, 0.10, 0.10), 1.0, None, None, None)],
     # La baliza de Hollín: las máquinas estuvieron en el Cinturón Oscuro (registro en inglés en Ciencia.cfg)
     "Hollin": [("Moho", "MetalSpire", "BalizaMaquinas", MACHINE, 50.0, ["Baliza"], None, None)],
+    # ---- Creus–Halum (Creus es un gigante gaseoso: sin superficie, sin scatters)
+    "Halum": [  # islas de hielo a la deriva y nieve de hidrógeno sobre el mar de neón
+        ("Eeloo", "IceSlabsTinySlabs", "LosasHielo", (1.00, 1.03, 1.08), 1.0, ["Islas a la Deriva", "Nieves de Hidrogeno"], None, 2),
+        ("Eeloo", "IceSlabsMedSlabs", "BloquesHielo", (1.00, 1.03, 1.08), 1.0, ["Islas a la Deriva"], None, 2),
+    ],
+    "Ocrea": [  # lecho violeta, mantos de H2 plateados y glaciares de neón
+        ("Mun", "SmallRocks", "RocasLecho", (0.62, 0.58, 0.80), 1.0, ["Lecho Desnudo", "Campos de Fumarolas"], None, None),
+        ("Vall", "TinyCrystals", "EscarchaHidrogeno", (1.05, 1.03, 1.10), 1.0, ["Mantos de Hidrogeno", "Polos de Escarcha"], None, None),
+        ("Vall", "IceSlabsMedSlabs", "LosasNeon", (0.85, 1.00, 1.05), 1.0, ["Glaciares de Neon"], None, None),
+    ],
+    "Pastora": [("Gilly", "SmallRocksVar1", "RocasHollinAnillo", (0.35, 0.35, 0.37), 1.0, None, None, None)],
+    "Prima": [  # tolinas rojizas
+        ("Gilly", "SmallRocksVar1", "RocasTolinas", (0.75, 0.62, 0.52), 1.0, None, None, None),
+        ("Gilly", "MedRocksVar1", "BloquesTolinas", (0.75, 0.62, 0.52), 1.0, None, ["Cuello Brillante"], None),
+    ],
+    "Secunda": [  # hielo de agua; bloques caídos al pie del acantilado de Verona
+        ("Eeloo", "IceSlabsTinySlabs", "LosasHielo", (1.08, 1.10, 1.12), 1.0, None, None, None),
+        ("Eeloo", "IceSlabsMedSlabs", "BloquesVerona", (1.08, 1.10, 1.12), 3.0, ["Acantilado Verona"], None, None),
+    ],
+    "Heraldo": [  # costra negra; hielo fresco en los pozos activos
+        ("Gilly", "SmallRocksVar1", "CostraCometa", (0.25, 0.23, 0.22), 1.0, None, ["Pozos Activos"], None),
+        ("Vall", "TinyCrystals", "HieloFresco", (1.05, 1.08, 1.12), 2.0, ["Pozos Activos"], None, None),
+    ],
+    # ---- Kraken
+    "Nox": [  # casi negra; bloques del gran impacto
+        ("Gilly", "SmallRocksVar1", "RocasNegras", (0.12, 0.12, 0.13), 1.0, None, None, None),
+        ("Gilly", "MedRocksVar1", "BloquesImpacto", (0.12, 0.12, 0.13), 1.5, ["Gran Crater"], None, None),
+    ],
+    "Azabache": [  # carbono vítreo: esquirlas que destellan en azul
+        ("Bop", "SmallRocksVar1", "RocasVitreas", (0.15, 0.16, 0.20), 1.0, None, ["Facetas Vitreas"], None),
+        ("Ike", "TinyCrystals", "EsquirlasVitreas", (0.20, 0.25, 0.35), 2.0, ["Facetas Vitreas"], None, None),
+    ],
+    "Brea": [("Gilly", "SmallRocksVar1", "GrumosOrganicos", (0.14, 0.12, 0.10), 0.3, None, ["Charcos de Brea"], None)],
+    "Tizne": [  # montón de escombros: bloques por todas partes
+        ("Gilly", "SmallRocksVar1", "Escombros", (0.13, 0.13, 0.13), 1.5, None, None, None),
+        ("Gilly", "LargeRocksVar1", "Bloques", (0.13, 0.13, 0.13), 1.0, None, None, None),
+        ("Gilly", "HugeRocksVar1", "BloquesGigantes", (0.13, 0.13, 0.13), 2.0, ["Campos de Bloques"], None, None),
+    ],
+    "Escoria": [  # escoria vesicular
+        ("Bop", "SmallRocksVar1", "Escoria", (0.18, 0.14, 0.12), 1.0, None, None, None),
+        ("Bop", "MedRocksVar1", "EscoriaMed", (0.18, 0.14, 0.12), 1.0, None, None, None),
+    ],
+    # ---- Sistema de Kerbol
+    "Ceniza": [  # arcillas pardas; sales claras en el Monte Solitario
+        ("Mun", "SmallRocks", "RocasArcilla", (0.55, 0.52, 0.48), 1.0, None, None, None),
+        ("Mun", "MedRocks", "BloquesArcilla", (0.55, 0.52, 0.48), 1.0, None, ["Monte Solitario"], None),
+        ("Eeloo", "SlabsSmall", "CostrasSal", (1.10, 1.08, 1.04), 2.0, ["Monte Solitario"], None, None),
+    ],
+    "Karmen": [  # roca gris; losas desprendidas en la cara de fractura
+        ("Gilly", "SmallRocksVar1", "RocasGrises", (0.47, 0.45, 0.42), 1.0, None, None, None),
+        ("Tylo", "SmallSlabs", "LosasFractura", (0.47, 0.45, 0.42), 2.0, ["Cara de Fractura"], None, None),
+    ],
     "Ignea": [
         ("Dres", "SmallRocksVar1", "CostraRota", (0.35, 0.22, 0.18), 1.0, ["Costra Enfriada"], None, None),
         ("Dres", "MedRocksVar1", "BloquesCostra", (0.35, 0.22, 0.18), 1.0, ["Costra Enfriada"], None, None),
@@ -188,7 +240,10 @@ SUBDIV = {"Krax": (7, 700), "Scarch": (6, 600), "Tenebris": (6, 600), "Salus": (
           "Norh": (6, 600), "Skolta": (6, 600), "Termos": (6, 500), "Talia": (6, 500), "Tyrna": (6, 600),
           "Akira": (6, 600),
           "Ignea": (6, 500), "Lumen": (6, 700), "Fuligo": (6, 500), "Caligo": (6, 500), "Atra": (6, 500),
-          "Hollin": (5, 350)}
+          "Hollin": (5, 350),
+          "Halum": (6, 600), "Ocrea": (6, 500), "Ceniza": (6, 500), "Nox": (5, 350), "Prima": (5, 350),
+          "Secunda": (5, 350), "Pastora": (5, 350), "Heraldo": (5, 350), "Azabache": (5, 350), "Brea": (5, 350),
+          "Tizne": (5, 350), "Escoria": (5, 350), "Karmen": (5, 350)}
 PQS_OUT = OUT.with_name("Parallax_PQS.cfg")
 
 
