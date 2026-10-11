@@ -1,0 +1,49 @@
+name: Avisar a Discord
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+
+jobs:
+  discord:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enviar aviso
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          ACTOR: ${{ github.actor }}
+          COMPARE_URL: ${{ github.event.compare }}
+          RELEASE_NAME: ${{ github.event.release.name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "DISCORD_WEBHOOK_URL no está configurado; no se envía nada."
+            exit 0
+          fi
+
+          if [ "$EVENT" = "release" ]; then
+            TITLE="Nueva versión: ${RELEASE_NAME:-$RELEASE_TAG}"
+            URL="$RELEASE_URL"
+            BODY="$(printf '%s' "$RELEASE_BODY" | head -c 1500)"
+          else
+            VERSION="$(cat VERSION 2>/dev/null || echo '?')"
+            TITLE="Cambios en FarBeyond (v$VERSION)"
+            URL="$COMPARE_URL"
+            BODY="$(git log -n 5 --pretty='• %s (%an)' | head -c 1500)"
+          fi
+
+          jq -n \
+            --arg title "$TITLE" \
+            --arg url "$URL" \
+            --arg body "$BODY" \
+            --arg footer "$REPO · $ACTOR" \
+            '{embeds: [{title: $title, url: $url, description: $body, color: 5793266, footer: {text: $footer}}]}' \
+          | curl -sS -f -H 'Content-Type: application/json' -d @- "$WEBHOOK"
