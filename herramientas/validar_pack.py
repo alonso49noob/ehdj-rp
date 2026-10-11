@@ -200,6 +200,18 @@ def main():
             im = Image.open(GAMEDATA / nrm)
             if im.mode != "RGBA" or np.asarray(im)[..., 0].mean() < 250:
                 errors.append(f"{where}: {nrm} no está en formato DXT5nm (X en alfa, Y en verde, rojo = 255)")
+        # Contra el aspecto de plástico: el alfa de _Color es la máscara especular del shader de la vista lejana.
+        # Si el PQS no usa _Color, debe ser RGBA (RGB = brillo 1 en todo el planeta); el brillo se fija con specColor.
+        if not star:
+            mat = sv.node("Material")
+            if mat.get("specColor") is None:
+                errors.append(f"{where}: ScaledVersion sin specColor (la plantilla deja un brillo de plástico)")
+            tex = mat.get("texture")
+            mods = b.node("PQS").node("Mods") if b.node("PQS") else None
+            pqs_col = mods.node("VertexColorMap").get("map") if mods and mods.node("VertexColorMap") else None
+            if tex and tex.endswith(".png") and tex != pqs_col and (GAMEDATA / tex).exists() \
+                    and Image.open(GAMEDATA / tex).mode != "RGBA":
+                errors.append(f"{where}: {tex} sin alfa: KSP lo lee como brillo 1 en todo el planeta (plástico)")
         if star:
             light = sv.node("Light")
             if not light or abs(num(light.get("luminosity")) / S.KRAKEN_LUMINOSITY - 1) > 0.01:
@@ -268,19 +280,43 @@ def main():
                     gap = abs(oa["a"] - ob["a"]) - (oa["a"] * oa["e"] + ob["a"] * ob["e"])
                 if gap < S.soi(a) + S.soi(b):
                     errors.append(f"SOI solapadas: {a} y {b} (separación mínima {gap:.3e} m)")
-    # Cuerpos del pack que orbitan Kerbol (salvo cometas): sin cruzar las órbitas de los planetas stock
-    STOCK = {"Moho": (5263138304, 0.2, 9646663), "Eve": (9832684544, 0.01, 85109365),
-             "Kerbin": (13599840256, 0.0, 84159286), "Duna": (20726155264, 0.051, 47921949),
-             "Dres": (40839348203, 0.145, 32832840), "Jool": (68773560320, 0.05, 2455985200),
-             "Eeloo": (90118820000, 0.26, 119082940)}
+    # Cuerpos del pack que orbitan Kerbol (salvo cometas): la distancia mínima en 3D entre su órbita y la de
+    # cada planeta stock (MOID) debe superar el doble de la suma de las SOI. Un chequeo solo radial daría falsos
+    # positivos con órbitas inclinadas (el propio Jool "cruzaría" a Eeloo).
+    STOCK = {  # a, e, i, lan, argpe, SOI
+        "Moho": (5263138304, 0.2, 7.0, 70, 15, 9646663), "Eve": (9832684544, 0.01, 2.1, 15, 0, 85109365),
+        "Kerbin": (13599840256, 0.0, 0.0, 0, 0, 84159286), "Duna": (20726155264, 0.051, 0.06, 135.5, 0, 47921949),
+        "Dres": (40839348203, 0.145, 5.0, 280, 90, 32832840), "Jool": (68773560320, 0.05, 1.304, 52, 0, 2455985200),
+        "Eeloo": (90118820000, 0.26, 6.15, 50, 260, 119082940)}
+
+    def orbit_curve(a, e, i, lan, argpe, n=2000):
+        nu = np.linspace(0, 2 * np.pi, n, endpoint=False)
+        r = a * (1 - e * e) / (1 + e * np.cos(nu))
+        x, y = r * np.cos(nu), r * np.sin(nu)
+        w, inc, node = (math.radians(v) for v in (argpe, i, lan))
+        cw, sw, ci, si, cn, sn = (math.cos(w), math.sin(w), math.cos(inc), math.sin(inc), math.cos(node), math.sin(node))
+        return np.stack([(cn * cw - sn * sw * ci) * x + (-cn * sw - sn * cw * ci) * y,
+                         (sn * cw + cn * sw * ci) * x + (-sn * sw + cn * cw * ci) * y,
+                         sw * si * x + cw * si * y], 1)
+
+    def moid(A, B):
+        return min(np.linalg.norm(A[k:k + 250, None] - B[None], axis=2).min() for k in range(0, len(A), 250))
+
     for name, r in S.BODIES.items():
         o = r["orbit"]
-        if r["parent"] != "Sun" or o["e"] > 0.5:
+        if r["parent"] != "Sun" or o["e"] > 0.5 or o["a"] > 10 * STOCK["Eeloo"][0]:
             continue
-        lo, hi = o["a"] * (1 - o["e"]) - S.soi(name), o["a"] * (1 + o["e"]) + S.soi(name)
-        for st, (a, e, soi) in STOCK.items():
-            if lo < a * (1 + e) + soi and hi > a * (1 - e) - soi:
-                errors.append(f"{name}: su órbita cruza la de {st}")
+        mine = orbit_curve(o["a"], o["e"], o["i"], o["lan"], o["argpe"])
+        for st, (a, e, i, lan, argpe, soi) in STOCK.items():
+            if st == "Jool" and abs(o["a"] - S.JOOL_ORBIT["a"]) < 1:   # troyano: mismo semieje, ~60° de separación
+                J = S.JOOL_ORBIT
+                sep = (math.degrees(J["M0"] - o["M0"]) + J["lan"] + J["argpe"] - o["lan"] - o["argpe"]) % 360
+                if not (55 <= min(sep, 360 - sep) <= 65):
+                    errors.append(f"{name}: comparte semieje con Jool pero no está en L4/L5 ({sep:.1f}°)")
+                continue
+            d = moid(mine, orbit_curve(a, e, i, lan, argpe))
+            if d < 2 * (soi + S.soi(name)):
+                errors.append(f"{name}: su órbita pasa a {d / 1e9:.2f} Gm de la de {st} (mínimo {2 * (soi + S.soi(name)) / 1e9:.2f})")
 
     # ---- textos de ciencia: cuerpo + situación (+ bioma existente)
     from generar_texturas import BIOMES

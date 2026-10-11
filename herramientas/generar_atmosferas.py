@@ -33,16 +33,19 @@ def temperature(p, A):
 
 
 def profile(name, steps=20000):
-    """Devuelve listas (h, p_atm, T) desde la superficie hasta p_top."""
+    """Devuelve listas (h, p_atm, T) desde la superficie hasta p_top.
+    Con `scale` (cuerpos de fichas a tamaño real reducidos ÷ scale, como Termos) se integra el cuerpo real
+    (radio × scale, misma g) y las alturas se dividen entre scale, igual que el radio."""
     A, B = S.ATMOS[name], S.BODIES[name]
-    R, g0 = B["radius"], B["gee"] * S.G0
+    esc = A.get("scale", 1)
+    R, g0 = B["radius"] * esc, B["gee"] * S.G0
     s0, s1 = math.log(A["p0_atm"]), math.log(A["p_top_atm"])
     ds = (s1 - s0) / steps
     h, out = 0.0, []
     for k in range(steps + 1):
         p = math.exp(s0 + k * ds)
         T = temperature(p, A)
-        out.append((h, p, T))
+        out.append((h / esc, p, T))
         g = g0 * (R / (R + h)) ** 2
         h += -(RGAS * T / (A["M"] * g)) * ds
     return out
@@ -75,7 +78,7 @@ def build(name):
     for h in alts:
         p, T = interp(prof, h)
         g = g0 * (R / (R + h)) ** 2
-        dpdh = -p * S.ATM * M * g / (RGAS * T)            # kPa/m, derivada exacta
+        dpdh = -p * S.ATM * M * g * A.get("scale", 1) / (RGAS * T)   # kPa/m, derivada exacta (alturas ÷ scale)
         dh = 50.0
         dTdh = (interp(prof, h + dh)[1] - interp(prof, max(h - dh, 0))[1]) / (h + dh - max(h - dh, 0))
         pk.append((h, p * S.ATM, dpdh))

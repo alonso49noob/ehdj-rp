@@ -12,6 +12,9 @@ KERBIN_YEAR = 9_203_544.6         # s
 ATM = 101.325                     # kPa
 KLY = 63_241.077 * KAU            # año luz kerbal: 63 241 KAU = 8.60e14 m
 
+# Órbita stock de Jool (para el troyano Norh)
+JOOL_ORBIT = dict(a=68_773_560_320.0, e=0.05, i=1.304, lan=52, argpe=0, M0=0.1)
+
 PACK = "MundosLejanos"
 TEX = f"{PACK}/PluginData"        # ruta de texturas relativa a GameData
 
@@ -49,12 +52,16 @@ BODIES = {
         orbit=None,  # se calcula abajo
     ),
     # ------------------------------------------------------------------ Norh (sistema de Kerbol)
-    # Planeta rocoso entre Dres y Jool: 0.94 masas de Kerbin, 1 207 km de diámetro, 12 bar de N2/H2/NH3.
+    # Troyano de Jool (L5: lo sigue 60° por detrás, mismo semieje = mismo periodo).
+    # Planeta rocoso de 0.94 masas de Kerbin, 1 207 km de diámetro, 12 bar de N2/H2/NH3.
     # Banda ecuatorial de agua con amoníaco líquida a −40 °C, polos helados, volcanes y anillos de hielo.
     "Norh": dict(
         system="Kerbol", parent="Sun", radius=603_500, gee=0.9294,   # 0.94 × μ de Kerbin (3.5316e12) / R²
         template="Laythe",
-        orbit=dict(a=4 * KAU, e=0.035, i=2.1, lan=140, argpe=60, M0=2.6),
+        # e e i algo distintas de las de Jool: órbita muy parecida pero separada. Mismo nodo y periapsis,
+        # anomalía media 60° (π/3) menor -> va siempre 60° por detrás.
+        orbit=dict(a=JOOL_ORBIT["a"], e=0.065, i=2.3, lan=JOOL_ORBIT["lan"], argpe=JOOL_ORBIT["argpe"],
+                   M0=(JOOL_ORBIT["M0"] - math.pi / 3) % (2 * math.pi)),
     ),
     # Skolta: "Titán cálido" entre Duna y Dres (ficha del equipo, 2026-10-11). Año de 365.25 días de 24 h,
     # 0.75 g, 650 km, 4 bar de N2 + NH3 + CH4, mar de amoníaco con hidracina (65 % de la superficie).
@@ -66,11 +73,38 @@ BODIES = {
         system="Kerbol", parent="Skolta", radius=175_000, gee=0.10, template="Mun",
         orbit=dict(a=13_500_000, e=0.02, i=18, lan=60, argpe=0, M0=2.0),
     ),
+    # ---- Termos, Tyrna, Karmen y Talia (fichas del equipo, 28-07): las fichas dan tamaños reales (Termos mide
+    # 4 258 km); en KSP se dividen entre ESCALA, como Kerbin respecto a la Tierra, y se conserva la gravedad.
+    # Cinturón entre Skolta y Dres: Termos es su objeto más masivo (60 % de la masa).
+    "Termos": dict(  # planeta enano activo: 5 atm de N2/CO2/H2O/NH3, lagos de agua casi hirviendo, volcanes tropicales
+        system="Kerbol", parent="Sun", radius=212_900, gee=0.2702, template="Laythe",   # 2.65 m/s²
+        orbit=dict(a=33_500_000_000, e=0.025, i=6.5, lan=95, argpe=150, M0=4.0),     # 2.46 KAU
+    ),
+    "Tyrna": dict(  # luna helada con criovulcanismo y la superficie llena de metales
+        system="Kerbol", parent="Termos", radius=58_600, gee=0.0673, template="Minmus",   # 0.66 m/s²
+        orbit=dict(a=3_400_000, e=0.015, i=1.2, lan=30, argpe=0, M0=0.8),
+    ),
+    "Karmen": dict(  # luna del tamaño de un asteroide, mucho más allá de Tyrna (capturada)
+        system="Kerbol", parent="Termos", radius=4_000, gee=0.003, template="Gilly",
+        orbit=dict(a=21_000_000, e=0.18, i=27, lan=150, argpe=60, M0=3.5),
+    ),
+    # Cinturón exterior, entre Dres y Jool: Talia, segundo objeto más masivo (35 %), sin actividad y lleno de cráteres
+    "Talia": dict(
+        system="Kerbol", parent="Sun", radius=146_400, gee=0.1336, template="Dres",   # 1.31 m/s²
+        orbit=dict(a=53_000_000_000, e=0.07, i=9, lan=200, argpe=300, M0=1.5),       # 3.9 KAU
+    ),
+    # Akira (ficha del equipo): mundo transneidoniano de hielos de metano y nitrógeno a 200 KAU, excepcionalmente
+    # activo y con una atmósfera densa y estable. Sus 900 km de diámetro ya están a escala de KSP (la ficha lo
+    # compara con Plock, de 378 km): no se dividen.
+    "Akira": dict(
+        system="Kerbol", parent="Sun", radius=450_000, gee=0.20, template="Duna",
+        orbit=dict(a=200 * KAU, e=0.12, i=17, lan=320, argpe=110, M0=2.2),
+    ),
     # ------------------------------------------------------------------ sistema Kraken
-    # Enana marrón T2 (~1 250 K, ~400 Myr) a 2 años luz kerbales. 22 masas de Jool, 1.05 R_Jool.
+    # Enana marrón T2 (~1 250 K, ~400 Myr) a 0.2 años luz kerbales (~12 650 KAU; antes 2). 22 masas de Jool, 1.05 R_Jool.
     "Kraken": dict(
         system="Kraken", kind="star", parent="Sun", radius=6_300_000, gee=15.97, template="Sun",
-        orbit=dict(a=2 * KLY, e=0.0, i=14, lan=300, argpe=0, M0=1.0),
+        orbit=dict(a=0.2 * KLY, e=0.0, i=14, lan=300, argpe=0, M0=1.0),
     ),
     "Krax": dict(  # mundo de carbono tipo Mercurio, albedo 0.03; fundición de las máquinas
         system="Kraken", parent="Kraken", radius=260_000, gee=0.45, template="Moho",
@@ -80,8 +114,9 @@ BODIES = {
         system="Kraken", parent="Kraken", radius=650_000, gee=0.80, template="Eve",
         orbit=dict(a=58_000_000, e=0.02, i=1.2, lan=40, argpe=10, M0=1.7),
     ),
-    "Tenebris": dict(  # mundo oscuro (basalto) a 5 °C con agua líquida: inhabitable, pero fácil de colonizar
-        system="Kraken", parent="Kraken", radius=560_000, gee=0.85, template="Laythe",
+    "Tenebris": dict(  # mundo frío y oscuro bajo 0.2 atm de metano: océanos helados, agua líquida solo en el ecuador
+        # Referencia del equipo: 2.87 m/s² (se conserva la gravedad y el diámetro actual de 1 120 km, como en KSP)
+        system="Kraken", parent="Kraken", radius=560_000, gee=0.29266, template="Laythe",   # 2.87 m/s²
         orbit=dict(a=76_000_000, e=0.015, i=0.8, lan=80, argpe=60, M0=3.1),
     ),
     "Salus": dict(  # océano hipersalino casi global (97 %), inundado por impactos
@@ -98,7 +133,7 @@ BODIES = {
     ),
     "Lumen": dict(  # luna de hielo sucio de Tenebris: alumbra su cara nocturna eterna
         system="Kraken", parent="Tenebris", radius=90_000, gee=0.08, template="Minmus",
-        orbit=dict(a=2_200_000, e=0.01, i=3, lan=0, argpe=0, M0=1.0),
+        orbit=dict(a=1_400_000, e=0.01, i=3, lan=0, argpe=0, M0=1.0),   # más cerca: la SOI de Tenebris es de 2 214 km
     ),
     "Ignea": dict(  # protoplaneta con océano de magma dentro del disco protoplanetario
         system="Kraken", parent="Kraken", radius=180_000, gee=0.15, template="Dres",
@@ -165,14 +200,17 @@ ATMOS = {
     # Scarch: 90 % CO2 + 10 % CH4; estratosfera templada por la neblina orgánica
     "Scarch": dict(p0_atm=25.0, T0=323.0, M=0.0412, gamma=1.29, kappa=0.16,
                    T_tropo=200.0, T_top=240.0, p_top_atm=1e-6, iso_until_atm=None),
-    # Tenebris: 80 % N2, 18 % CO2, 2 % Ar — sin oxígeno libre: irrespirable, pero suave (1.3 atm, 5 °C)
-    "Tenebris": dict(p0_atm=1.3, T0=278.0, M=0.0311, gamma=1.37, kappa=0.19,
-                     T_tropo=210.0, T_top=250.0, p_top_atm=1e-6, iso_until_atm=None),
+    # Tenebris: 0.2 atm de metano (97 %) con trazas de N2 y Ar. Sin efecto invernadero: 3 °C en el ecuador
+    # (el único sitio con agua líquida) y ~−67 °C en los polos. Con 0.29 g y un gas tan ligero la atmósfera
+    # se estiraría miles de km: se corta en 1e-4 atm y sin inversión térmica (techo por debajo de la órbita de Lumen).
+    "Tenebris": dict(p0_atm=0.2, T0=276.0, M=0.01652, gamma=1.31, kappa=0.20,
+                     T_tropo=190.0, T_top=200.0, p_top_atm=1e-4, iso_until_atm=None,
+                     lat_bias=[(0, 0.0), (12, -4.0), (25, -16.0), (45, -40.0), (90, -70.0)]),
     # Salus: N2/CO2/H2O con trazas de H2 (la serpentinización lo hizo pasar por hiceano)
     "Salus": dict(p0_atm=2.0, T0=268.0, M=0.0291, gamma=1.39, kappa=0.19,
                   T_tropo=200.0, T_top=240.0, p_top_atm=1e-6, iso_until_atm=None),
     # Norh: 45 % N2, 23 % H2, 32 % NH3 a 12 bar. M = 0.45·28.01 + 0.23·2.016 + 0.32·17.03 = 18.5 g/mol.
-    # El invernadero por colisiones H2–N2 lo mantiene a −40 °C en el ecuador a 4 KAU de Kerbol.
+    # El invernadero por colisiones H2–N2 lo mantiene a −40 °C en el ecuador a 5.06 KAU de Kerbol (órbita de Jool).
     # El amoníaco satura el aire: el gradiente es suave (kappa bajo) y hay nubes de NH3.
     # lat_bias: (latitud, ΔT en K) sobre T0, que es la temperatura del ecuador; los polos rondan −75 °C.
     "Norh": dict(p0_atm=12.0 / 1.01325, T0=233.0, M=0.01852, gamma=1.36, kappa=0.20,
@@ -183,6 +221,20 @@ ATMOS = {
     "Skolta": dict(p0_atm=4.0 / 1.01325, T0=238.0, M=0.02535, gamma=1.37, kappa=0.20,
                    T_tropo=140.0, T_top=175.0, p_top_atm=1e-6, iso_until_atm=None,
                    lat_bias=[(0, 0.0), (30, -4.0), (60, -16.0), (90, -26.0)]),
+    # Termos: 55 % N2, 22 % CO2, 18 % H2O, 5 % NH3 a 5 atm (M = 29.2 g/mol). Ecuador a 395 K (122 °C), polos a ~368 K.
+    # A 5 atm el agua hierve a 152 °C: los lagos, calentados desde abajo, rondan los 140 °C en los trópicos volcánicos.
+    # scale: el cuerpo es la ficha ÷ ESCALA; se integra el Termos real (radio × 10, misma g) y las alturas se
+    # dividen igual que el radio (~45 km de atmósfera en vez de ~450).
+    "Termos": dict(p0_atm=5.0, T0=395.0, M=0.02918, gamma=1.33, kappa=0.20,
+                   T_tropo=215.0, T_top=250.0, p_top_atm=1e-6, iso_until_atm=None,
+                   lat_bias=[(0, 0.0), (25, -2.0), (50, -12.0), (90, -27.0)], scale=10),
+    # Akira: 92 % N2, 5 % CH4, 3 % CO a 1.2 atm (M = 27.4 g/mol), 62 K en el ecuador y ~56 K en los polos.
+    # A 62 K el hielo de N2 solo sostendría ~0.09 bar: la atmósfera "sorprendentemente densa y estable" de la ficha
+    # la mantienen los criovolcanes. Troposfera casi isoterma; estratosfera templada por el metano, como en Plutón.
+    # Con 0.2 g la atmósfera es muy alta: techo en 1e-5 atm (~165 km, 0.37 radios).
+    "Akira": dict(p0_atm=1.2, T0=62.0, M=0.02741, gamma=1.40, kappa=0.10,
+                  T_tropo=55.0, T_top=80.0, p_top_atm=1e-5, iso_until_atm=None,
+                  lat_bias=[(0, 0.0), (45, -2.0), (90, -6.0)]),
 }
 
 

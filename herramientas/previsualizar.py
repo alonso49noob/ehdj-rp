@@ -221,3 +221,8 @@ if __name__ == "__main__":
     (ROOT / "docs" / "skolta").mkdir(exist_ok=True)
     detalle("Skolta", folder="docs/skolta")
     detalle("Ceniza", r=160, folder="docs/skolta")
+    (ROOT / "docs" / "termos").mkdir(exist_ok=True)
+    for body, r in (("Termos", 260), ("Talia", 260), ("Tyrna", 160), ("Karmen", 120)):
+        detalle(body, r=r, folder="docs/termos")
+    (ROOT / "docs" / "akira").mkdir(exist_ok=True)
+    detalle("Akira", folder="docs/akira")

@@ -1,6 +1,6 @@
 #  FarBeyond, planet pack para la hermosa comunidad de El Hangar de Jeb
 
-Dos sistemas lejanos de Kerbol y dos planetas nuevos en el propio sistema de Kerbol, en un solo pack.
+Dos sistemas lejanos de Kerbol y, en el propio sistema de Kerbol, dos planetas nuevos, tres planetas enanos y sus lunas, en un solo pack.
 
 ### Sistema Creus–Halum (800 KAU)
 Un binario errante capturado por Kerbol:
@@ -13,19 +13,19 @@ Un binario errante capturado por Kerbol:
 
 ![Creus–Halum](docs/preview_sistema.png)
 
-### Sistema Kraken (2 años luz kerbales)
+### Sistema Kraken (0.2 años luz kerbales, ~12 650 KAU)
 Una enana marrón T2 de bandas granate y luz rojiza y tenue, rodeada de tres discos:
 - **Krax**, un mundo de carbono abrasador donde se replican las máquinas;
 - **Scarch**, una sauna volcánica de 25 atm que las máquinas están desmontando;
-- **Tenebris**, un mundo oscuro e inhabitable con agua líquida, donde los kerbals han fundado una colonia en cúpulas; su luna **Lumen** es de hielo sucio, con géiseres en el polo sur;
+- **Tenebris**, un mundo frío y oscuro bajo una tenue capa de metano, con océanos helados y agua líquida solo en el ecuador, donde quizá haya vida y los kerbals han fundado una colonia en cúpulas; su luna **Lumen** es de hielo sucio, con géiseres en el polo sur;
 - **Salus**, un océano hipersalino que pasó por hiceano, con sus lunas **Vestigia** (restos del gran impacto) y **Nox** (capturada);
 - **Ignea**, una protoplaneta con océano de magma dentro del disco protoplanetario;
 - el **Cinturón Oscuro**: los planetas enanos Fuligo, Caligo y Atra y 5 asteroides, casi invisibles (albedo de 0.01 a 0.02).
 
 ![Kraken](docs/kraken/preview_kraken.png)
 
-### Norh (sistema de Kerbol, 4 KAU)
-Un mundo rocoso del tamaño de Kerbin entre Dres y Jool:
+### Norh (sistema de Kerbol, troyano de Jool)
+Un mundo rocoso del tamaño de Kerbin que comparte órbita con Jool y lo sigue 60° por detrás:
 - 12 bar de nitrógeno, hidrógeno y amoníaco, que lo mantienen a −40 °C en el ecuador;
 - una banda de agua con amoníaco líquida alrededor del ecuador y polos helados;
 - ningún cráter, decenas de volcanes y el **Gran Volcán**, una isla de 9 km;
@@ -42,8 +42,27 @@ Un "Titán cálido" del tamaño de Kerbin, en una órbita inclinada 19°:
 
 ![Skolta](docs/skolta/preview_skolta.png)
 
+### Termos y Talia (cinturones del sistema de Kerbol)
+Dos planetas enanos que reciben buena parte de los impactos de sus cinturones:
+- **Termos** (entre Skolta y Dres), el 60 % de la masa de su cinturón. Es muy activo:
+  - 5 atm de nitrógeno, CO₂, vapor y amoníaco, a más de 100 °C;
+  - lagos inmensos de agua lechosa casi hirviendo (a 5 atm hierve a 152 °C), con terrazas blancas de sílice;
+  - volcanes y pozos ácidos de colores en los trópicos.
+- Sus lunas: **Tyrna**, helada, criovolcánica y llena de metales, y **Karmen**, un fragmento metálico capturado.
+- **Talia** (cinturón exterior, entre Dres y Jool), muerta y saturada de cráteres: la Gran Cuenca y afloramientos de hierro y níquel.
+
+![Termos](docs/termos/preview_termos.png)
+
+### Akira (200 KAU)
+Un mundo transneidoniano de hielos de nitrógeno y metano, de 900 km:
+- excepcionalmente activo, con criovolcanes y un glaciar de nitrógeno que se remueve en celdas;
+- una atmósfera sorprendentemente densa (1.2 atm) a −211 °C, bajo un cielo azul oscuro.
+
+![Akira](docs/akira/preview_akira.png)
+
 > Las texturas actuales son **provisionales**, generadas por código. Las listas de las que hay que pintar están en
 > [docs/TEXTURAS.md](docs/TEXTURAS.md) (Creus–Halum) y [docs/kraken/TEXTURAS.md](docs/kraken/TEXTURAS.md) (Kraken). Norh: [docs/norh/DISENO.md](docs/norh/DISENO.md). Skolta: [docs/skolta/DISENO.md](docs/skolta/DISENO.md).
+> Termos, Tyrna, Karmen y Talia: [docs/termos/DISENO.md](docs/termos/DISENO.md). Akira: [docs/akira/DISENO.md](docs/akira/DISENO.md).
 
 ## Instalación
 
@@ -74,6 +93,9 @@ GameData/MundosLejanos/
                            Lunas y CinturonOscuro (generados); Parallax_Scatters y Parallax_PQS (generados)
     Norh/                  Norh y su Ciencia
     Skolta/                Skolta, Ceniza (generado) y su Ciencia
+    Termos/                Termos, sus lunas Tyrna y Karmen (Lunas, generado) y su Ciencia
+    Talia/                 Talia y su Ciencia
+    Akira/                 Akira y su Ciencia
     Visuales/              Scatterer, EVE y PlanetShine (generados, opcionales)
     Respaldo_CTTP.cfg      texturas de suelo propias si falta CTTP (generado)
   PluginData/<Cuerpo>/     texturas (en PluginData para que KSP no las precargue)
@@ -97,7 +119,9 @@ docs/
   kraken/TEXTURAS.md       Kraken: lista de texturas y modelos 3D
   norh/DISENO.md           Norh: datos, física, biomas y texturas
   skolta/DISENO.md         Skolta: cómo se llevó la ficha del equipo al juego
-  referencias_artista/     20 láminas y MundosLejanos_referencias.pdf, para el artista
+  termos/DISENO.md         Termos, Tyrna, Karmen y Talia: escala, decisiones y biomas
+  akira/DISENO.md          Akira: escala, atmósfera y biomas
+  referencias_artista/     28 láminas y MundosLejanos_referencias.pdf, para el artista
 ```
 
 ## Flujo de trabajo
@@ -145,13 +169,9 @@ Ejecútalo antes de cada prueba en el juego. Comprueba:
 - los modelos y biomas de los scatters;
 - las claves de ciencia.
 
-<<<<<<< HEAD
-xdxd
-=======
 ```bash
 python herramientas/empaquetar.py
 ```
 Crea el zip para los playtesters en tu carpeta de Descargas: `ehdj_rp-v<versión>.zip`.
 - La versión sale del archivo `VERSION` y sube sola tras cada zip (0.0.120, 0.0.121…).
 - Antes de empaquetar pasa el validador: si hay errores, no crea el zip.
->>>>>>> a16df9b (2139075spiogjopiah<sje)

@@ -5,7 +5,7 @@ Todas existen ya como **provisionales**, en `GameData/MundosLejanos/PluginData/<
 
 **Pintad pensando en la luz rojiza.** En el juego todo se ve a través de `sunlightColor = 1, 0.55, 0.48` con intensidad 0.35, así que los blancos salen color salmón y los verdes y azules se apagan. Evitad los azules saturados: bajo esta enana no hay luz azul que reflejar. `docs/kraken/preview_kraken.png` simula esa luz.
 
-**Vista lejana y terreno van por separado** en los tres mundos con atmósfera gruesa (Scarch, Tenebris y Salus):
+**Vista lejana y terreno van por separado** en los mundos con atmósfera gruesa (Scarch y Salus; Tenebris usa la misma imagen para los dos):
 - `_Color` es lo que se ve desde órbita, con neblina o nubes horneadas.
 - `_Surface` es el terreno real, sin nubes, y lo usa `VertexColorMap`.
 
@@ -45,11 +45,10 @@ En las tiras, **u = 0 es el borde exterior** y u = 1 el interior. Los discos no 
 
 | ⭐ | Archivo | Final | Contenido |
 |---|---|---|---|
-| ⭐ | `Tenebris_Color.png` | 4096×2048 DXT1 | Terreno oscuro más un 30 % de nubes grises (`#706c6a`, `#9c9894`) |
-| ⭐ | `Tenebris_Surface.png` | 4096×2048 DXT1 | **Sin vegetación**: llanuras de basalto (`#2a2724` a `#181716`), tierras altas `#2c2c32` y `#3a3a42`, playas oscuras `#3a3632`, fondo marino `#0e1114`, casquetes `#c8c8c8`. La **colonia** (12° N 35° E) es una meseta gris `#5a5a60` con luces `#ffd890`; el **cráter de la máquina** (18° S 140° E), `#2a1a18` con óxido `#5a3020` |
+| ⭐ | `Tenebris_Color.png` | 4096×2048 DXT1 | Igual que `Tenebris_Surface.png`: la atmósfera es tan tenue que no hay nubes |
+| ⭐ | `Tenebris_Surface.png` | 4096×2048 DXT1 | Roca de albedo bajísimo (`#1c1b1a` a `#100f0e`), tierras altas `#24232a` y `#2c2b32`, **océanos helados** de hielo sucio (`#7a8088` a `#5c6168`, 35 %), mar ecuatorial líquido `#0e1114`, casquetes `#8a8e92`, **respiraderos de metano** `#6a5030` / `#4a3a26` en la costa ecuatorial. La **colonia** (12° N 35° E) es una meseta gris `#5a5a60` con luces `#ffd890`; el **cráter de la máquina** (18° S 140° E), `#2a1a18` con óxido `#5a3020` |
 | ⭐ | `Tenebris_Height.png` | 8192×4096 R16 | `h = −4000 + gris × 8000`. Un 35 % de tierra. **La meseta de la colonia, a +320 m, debe quedar plana** porque la plataforma de Kerbal Konstructs va encima |
-| | `Tenebris_Normal.png`, `Tenebris_Biomes.png` | 2048×1024 | 6 biomas (Restos de la Máquina ×2.5) |
-| | `Tenebris_Clouds.png` *(v2)* | 4096×2048 DXT5 | Capa de nubes EVE |
+| | `Tenebris_Normal.png`, `Tenebris_Biomes.png` | 2048×1024 | 8 biomas (Restos de la Máquina ×2.5, Respiraderos de Metano ×2) |
 
 ## Salus — océano hipersalino (Laythe)
 
@@ -81,7 +80,7 @@ Todas a 1024×512, con color, normal, altura y biomas (Depresiones, Llanuras, Cr
 |---|---|
 | `<Cuerpo>_EVECoverage.png` | Cobertura en gris (canal R) para las nubes volumétricas V5 |
 | `<Cuerpo>_EVEClouds.png` | Capa 2D RGBA (color de nube + alfa = cobertura) |
-| `<Cuerpo>_ScaledEVE.png` | Vista lejana sin nubes de Halum, Tenebris y Salus. Solo se usa con EVE instalado |
+| `<Cuerpo>_ScaledEVE.png` | Vista lejana sin nubes de Halum y Salus. Solo se usa con EVE instalado |
 
 Si el artista pinta las nubes por separado, estas tres salen de su capa de nubes y la vista lejana normal (`_Color`) queda como "terreno + nubes".
 

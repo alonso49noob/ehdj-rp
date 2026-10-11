@@ -15,7 +15,7 @@ Se basa en la ficha del equipo **"Skolta - ficha del planeta (KSP)"** (Claude Do
 | Temperatura | ~230 K (210-250 K) | 238 K en el ecuador y ~212 K en los polos (curva de latitud). Media ≈ 230 K |
 | Densidad del aire | 4.9 kg/m³ en la ficha | 5.1 kg/m³. Techo a 133 km |
 | Mar | NH₃ con hidracina, densidad 0.7-0.8, 60-70 % de la superficie | `Ocean { density = 0.75 }`. El 64 % del área queda bajo el nivel del mar |
-| Color del mar | Incoloro: toma el color del fondo (subsección "Color del mar") | Fondo somero crema `#D6CDB2`, marrón `#4A3326` junto a las dunas, profundo `#3A3028`; bahías `#2F4C9E`, cobre `#4E7BE0`. Océano `color` = `#3A3028`, `colorFromSpace` gris ámbar (refleja el cielo). Vista lejana: `#8C7A62` con borde claro |
+| Color del mar | Incoloro: toma el color del fondo (subsección "Color del mar") | Fondo somero crema `#D6CDB2`, marrón `#4A3326` junto a las dunas, profundo `#3A3028`; bahías `#2F4C9E`, cobre `#4E7BE0`. Océano `color` = `#3A3028`, `colorFromSpace` pardo oscuro (`0.33,0.28,0.22`). Vista lejana: `#4A3E31` con borde claro `#C9BD9C` y brillo especular (alfa de `_Color`). Antes era gris ámbar `#8C7A62` bajo un 72 % de bruma, y en el playtest el mar casi no se distinguía |
 | Colores | Paleta de la sección "Material gráfico" | Mismos códigos (ver la tabla de abajo) |
 | Sin oxígeno | | `oxygen = false`: los motores de reacción no funcionan |
 
@@ -54,9 +54,9 @@ Para darle un rasgo único a Ceniza, añadí el **Monte Solitario** (12° N, 75�
 | Yacimientos Metálicos | `#a040ff` | 1.6 | 4 manchas pequeñas de cobre y níquel, azules y violetas |
 | Casquetes Polares | `#c0ffff` | 1.2 | Más allá de ~74° |
 
-**Vista desde el espacio.** Es como Titán: bruma naranja (`#D68B52` → `#A86C3F`) al 72 %, sobre el terreno muy difuminado al 28 %. Se adivinan:
+**Vista desde el espacio.** Es como Titán: bruma naranja (`#D68B52` → `#A86C3F`, en degradado) al 58 %, sobre el terreno difuminado al 42 %. Se distinguen:
 - el continente blanco;
-- el mar pálido;
+- el mar, oscuro mar adentro, con el borde claro de las costas y el reflejo de Kerbol;
 - las dunas;
 - los casquetes de color crema.
 

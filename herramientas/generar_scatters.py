@@ -41,10 +41,11 @@ PLAN = {
         ("Moho", "LargeMetalCluster", "MaquinaModulo", MACHINE, 1.0, ["Campos de Extraccion"], None, 2),
     ],
     "Tenebris": [
-        ("Tylo", "SmallSlabs", "LosasBasalto", (0.35, 0.35, 0.40), 1.0, None,
-         ["Oceano Oscuro", "Asentamiento Kerbal"], 2),
-        ("Dres", "MedRocksVar1", "BloquesBasalto", (0.22, 0.21, 0.20), 1.0, ["Llanuras de Basalto"], None, 2),
-        ("Dres", "SmallRocksVar1", "EscoriaVolcanica", (0.20, 0.19, 0.18), 1.0, ["Llanuras de Basalto"], None, 2),
+        ("Tylo", "SmallSlabs", "LosasOscuras", (0.30, 0.30, 0.33), 1.0, None,
+         ["Mar Ecuatorial", "Oceanos Helados", "Asentamiento Kerbal"], 2),
+        ("Dres", "MedRocksVar1", "BloquesOscuros", (0.16, 0.15, 0.15), 1.0, ["Llanuras Oscuras", "Tierras Altas"], None, 2),
+        ("Dres", "SmallRocksVar1", "RocasOscuras", (0.15, 0.14, 0.14), 1.0, ["Llanuras Oscuras"], None, 2),
+        ("Tylo", "SmallRocksVar1", "BloquesHielo", (0.85, 0.88, 0.92), 1.0, ["Oceanos Helados", "Casquetes Polares"], None, 2),
         ("Moho", "MetalSpireWide", "MaquinaDerribada", (0.60, 0.35, 0.25), 15.0, ["Restos de la Maquina"], None, None),
         ("Moho", "SmallMetalCluster", "RestosMaquina", (0.60, 0.35, 0.25), 1.0, ["Restos de la Maquina"], None, None),
     ],
@@ -61,6 +62,27 @@ PLAN = {
         ("Tylo", "SmallRocksVar1", "RocasAnortosita", (1.30, 1.28, 1.22), 1.0, ["Tierras Altas", "Montanas"], None, 2),
         ("Duna", "SlabsSmall", "LosasBasalto", (0.70, 0.60, 0.40), 1.0, ["Campos Volcanicos", "Llanuras"], None, 2),
         ("Duna", "SmallRocksVar1", "RocasCobre", (0.45, 0.60, 1.20), 1.0, ["Yacimientos Metalicos"], None, 2),
+    ],
+    "Termos": [  # losas de basalto, costras de sílice blanca, toba y costras de azufre en los pozos ácidos
+        ("Duna", "SlabsSmall", "LosasBasalto", (0.55, 0.50, 0.46), 1.0, ["Llanuras Basalticas", "Campos Volcanicos"], None, 2),
+        ("Tylo", "SmallRocksVar1", "CostrasSilice", (1.30, 1.28, 1.20), 1.0, ["Orillas de Silice"], None, 2),
+        ("Duna", "SmallRocksVar1", "RocasToba", (0.95, 0.85, 0.70), 1.0, ["Tierras Altas", "Montanas"], None, 2),
+        ("Duna", "SlabsSmall", "CostrasAzufre", (1.30, 1.20, 0.45), 1.0, ["Pozos Acidos"], None, 2),
+    ],
+    "Talia": [  # regolito, bloques de eyecta y metal nativo en los afloramientos
+        ("Dres", "SmallRocksVar1", "Regolito", (0.70, 0.67, 0.63), 1.0, None, ["Afloramientos Metalicos"], None),
+        ("Dres", "MedRocksVar1", "BloquesEyecta", (0.75, 0.72, 0.68), 1.0,
+         ["Crateres Jovenes", "Gran Cuenca", "Tierras Altas"], None, None),
+        ("Moho", "SmallMetalCluster", "MetalNativo", (0.70, 0.72, 0.78), 1.0, ["Afloramientos Metalicos"], None, None),
+    ],
+    "Tyrna": [  # cristales de hielo y vetas metálicas en las fisuras
+        ("Ike", "SmallCrystals", "CristalesHielo", (1.10, 1.12, 1.15), 1.0, None, None, None),
+        ("Moho", "SmallMetalCluster", "VetasMetalicas", (0.65, 0.58, 0.50), 1.0, ["Fisuras Criovolcanicas"], None, None),
+    ],
+    "Akira": [  # bloques de hielo de agua, cuchillas de metano y rocas de tolinas
+        ("Tylo", "SmallRocksVar1", "BloquesHielo", (1.20, 1.18, 1.25), 1.0, ["Montanas de Hielo", "Crestas de Metano"], None, None),
+        ("Ike", "TallCrystals", "CuchillasMetano", (1.05, 0.98, 1.15), 1.0, ["Crestas de Metano"], None, None),
+        ("Dres", "SmallRocksVar1", "RocasTolinas", (0.60, 0.40, 0.33), 1.0, ["Tierras de Tolinas"], None, None),
     ],
     "Vestigia": [
         ("Tylo", "SmallRocksVar1", "RocasVitrificadas", (0.90, 0.88, 0.86), 1.0, None, None, None),
@@ -163,7 +185,8 @@ def tint(color, rgb):
 
 # Subdivisión de Parallax por cuerpo (nivel, radio), como en Parallax_StockTerrainTextures
 SUBDIV = {"Krax": (7, 700), "Scarch": (6, 600), "Tenebris": (6, 600), "Salus": (6, 500), "Vestigia": (6, 500),
-          "Norh": (6, 600), "Skolta": (6, 600),
+          "Norh": (6, 600), "Skolta": (6, 600), "Termos": (6, 500), "Talia": (6, 500), "Tyrna": (6, 600),
+          "Akira": (6, 600),
           "Ignea": (6, 500), "Lumen": (6, 700), "Fuligo": (6, 500), "Caligo": (6, 500), "Atra": (6, 500),
           "Hollin": (5, 350)}
 PQS_OUT = OUT.with_name("Parallax_PQS.cfg")

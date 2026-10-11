@@ -11,7 +11,13 @@ Pintadlas sobre una esfera o con ruido 3D (Blender, Gaea, World Machine). Pintar
 
 ## Guía de estilo (sacada de la imagen de referencia)
 
-Colores planos, posterizados, sin degradados realistas:
+Paletas sacadas de la imagen de referencia, **pero sin tonos totalmente planos**. En el playtest del 11-10-2026, las bandas posterizadas, las normales escalonadas y el brillo especular en todo el planeta hacían que las superficies parecieran de plástico. Por eso:
+- se mantienen los colores, con grano, manchas y vetas a varias escalas (como en las texturas stock de Duna o Kerbin), y bordes suaves entre zonas;
+- las normales tienen relieve fino; en los mundos con neblina, solo el relieve suave de las nubes, sin escalones;
+- el alfa de `_Color` marca qué brilla (ver *Formatos*).
+
+Las generadas por código ya lo hacen (`generar_texturas.naturalize`, `normal_map(detail=…)`, `save(gloss=…)`).
+
 
 | Cuerpo | Paleta (muestreada de `docs/referencia.png`) |
 |---|---|
@@ -26,7 +32,7 @@ Muchos packs voltean los DDS en vertical al exportar; comprobadlo con este marca
 
 | Tipo de textura | Formato final | Por qué |
 |---|---|---|
-| Color (vista lejana y `VertexColorMap`) | DDS **DXT1** (BC1); DXT5 si lleva alfa | Rápido y ligero en RAM |
+| Color (vista lejana y `VertexColorMap`) | DDS **DXT5** con alfa (DXT1 si es opaca) | **El alfa es la máscara de brillo** ("Gloss" del shader): 0 en tierra y nubes, ~0.6 en mares, ~0.16 en hielo. Un RGB se lee como alfa = 1 y todo el planeta brilla como plástico. Si el PQS usa también `_Color` (cuerpos sin `_Surface`), va opaca y el brillo se fija con `specColor` en el `.cfg` |
 | Normal | DDS **DXT5nm**, o PNG RGBA con la misma disposición: **X (este) en el ALFA, Y (norte) en el verde, rojo = 255** | Los shaders de KSP leen X del alfa. Un PNG RGB normal sale con X = +1: luz torcida y cuñas en los polos (lo comprueba `validar_pack.py`). Además, **planas por encima de ~75°** de latitud |
 | Altura (PQS) | DDS **R16** (16 bits, admitido por tu Kopernicus) o PNG gris de 8 bits | Con 8 bits, Halum tiene escalones de 17.6 m |
 | Biomas | **PNG RGB sin compresión**, colores exactos y **sin antialiasing** | DXT altera los colores y rompe la detección de biomas |

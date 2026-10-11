@@ -62,11 +62,12 @@ INFO = {
         "Nieve orgánica #b8925e / #c9a46e en cumbres y polos; lava #3a2c2c con grietas #c8502a; mar ácido (color en el .cfg).",
         "3 Campos de Extracción: rejillas de pozos de 6 km (#2e2a2c, paredes #4a4446). Deben verse artificiales.",
         "Altura: h = −4000 + gris × 9000; 40 % de mar; 12 volcanes en escudo con caldera."]),
-    "Tenebris": ("Mundo oscuro e inhabitable con agua líquida: basalto, océanos negros y una colonia en cúpulas.", [
-        "Sin vegetación: el albedo bajo es mineral. Llanuras de basalto #2a2724 → #181716, tierras altas #2c2c32 / #3a3a42, playas #3a3632, fondo marino #0e1114, casquetes #c8c8c8.",
+    "Tenebris": ("Mundo frío y oscuro bajo 0.2 atm de metano: océanos helados y agua líquida solo en el ecuador.", [
+        "Roca de albedo bajísimo #1c1b1a → #100f0e, tierras altas #24232a / #2c2b32, océanos helados (hielo sucio) #7a8088 → #5c6168, mar ecuatorial #0e1114, casquetes #8a8e92.",
+        "Respiraderos de metano (6, en la costa ecuatorial): manchas pardas #6a5030 / #4a3a26: ¿tapetes microbianos?",
         "COLONIA (12° N 35° E): meseta PLANA a +320 m, gris #5a5a60 con luces #ffd890. No alterar su relieve.",
         "Restos de la máquina (18° S 140° E): cráter de 13 km #2a1a18 con anillo de óxido #5a3020.",
-        "Nubes grises (#706c6a, #9c9894, 30 %); con EVE van aparte. Altura: h = −4000 + gris × 8000."]),
+        "Sin nubes: Color = Surface (atmósfera tenue). Altura: h = −4000 + gris × 8000; la banquisa está a +15–40 m."]),
     "Lumen": ("Luna de hielo sucio (albedo 0.35): la lámpara tenue de la noche de Tenebris.", [
         "Paleta gris #9c9894, #86827e, #6e6a68 (hielo con polvo del disco). Lleva cristales de hielo de Parallax encima.",
         "Solo el polo sur es nieve limpia. La luz de Kraken la teñirá de rojizo: pintar en gris neutro."]),
@@ -142,8 +143,33 @@ INFO["Ceniza"] = ("Luna de Skolta: arcillas amoniacadas pardas (como Ceres) y el
     "Paleta #6a645c → #46413c. RASGO: Monte Solitario en 12° N 75° E, domo de 3 km con vetas claras #c8c4bc.",
     "h = −3000 + gris × 7000."])
 
+# Termos, Tyrna, Karmen, Talia y Akira (fichas del equipo): detrás de Ceniza, antes de la lámina de asteroides
+INFO["Termos"] = ("Planeta enano activo bajo 5 atm: lagos de agua casi hirviendo, terrazas de sílice, volcanes y pozos ácidos.", [
+    "Color: terreno con velo azulado #c4d0dc (26 %) y nubes de vapor #f3f2ee → #cbced2 (~35 % del cielo, más en el ecuador y los polos).",
+    "Surface: basalto #58534c → #393633, toba #aa9c84 → #857a6b en las tierras altas, arcillas verdosas #7e8472 hacia los polos, coladas #2e2a27, calderas activas #d8582a.",
+    "Lagos (22 %): agua lechosa, turquesa #9fd6cc en la orilla → #1d5866 en lo profundo; #4f9aa6 desde órbita. Orillas de sínter #ece6d6 con bandas ocres #d29b63.",
+    "8 pozos ácidos tropicales (como Dallol): sal #f2ead2, azufre #e6d23a, verde ácido #9cc83c, óxido #c8642a. h = −3000 + gris × 10000. Termos_Clouds: nubes para EVE."])
+INFO["Tyrna"] = ("Luna helada de Termos: criovulcanismo y metales por toda la superficie.", [
+    "Hielo #e2e8ec → #b2bcc4 salpicado de granos metálicos #8e8a84 (~25 %).",
+    "RASGO: 6 fisuras criovolcánicas (arcos de ~70°) con el fondo oscuro #5a4e44 (costras metálicas) y un halo de hielo fresco #f3f7f9.",
+    "h = −2000 + gris × 4000."])
+INFO["Karmen"] = ("Luna-asteroide de Termos: fragmento del núcleo metálico de un cuerpo roto.", [
+    "Metal oscuro #77726c → #4d4a46 (tipo M). RASGO: cara de fractura plana y pulida hacia 0° 90° E (#85827d con reflejos #a29f9a).",
+    "La cara plana está en la altura (un plano a 0.82 R del centro): no redondearla. h = −1500 + gris × 3000."])
+INFO["Talia"] = ("Planeta enano muerto y saturado de cráteres: el registro de impactos más antiguo del sistema, con metales.", [
+    "Regolito gris pardo #a29b92 → #5b5752 según la altura. Cráteres de todos los tamaños, unos sobre otros.",
+    "Gran Cuenca (22° S 110° E, 220 km): fondo de vidrio de impacto más oscuro y tres anillos de macizos rotos, algo más claros (#b4ada2).",
+    "6 cráteres jóvenes con rayos claros #d2ccc2; 12 afloramientos metálicos #6c717a / #a7abb2 en los bordes de las cuencas.",
+    "h = −5500 + gris × 11000."])
+INFO["Akira"] = ("Mundo transneidoniano de hielos de N2 y CH4, muy activo y con atmósfera densa: hielo rosado, glaciar y tolinas.", [
+    "Color = terreno al 64 % + velo azul #bccbe0 → #98abc8 al 36 %. Surface = terreno real (PQS).",
+    "Llanuras de N2 #ece4e6 → #cbbfc4; tolinas ecuatoriales #84503a → #542f24 con cráteres; crestas de metano en cuchillas #b9a9c4 / #a493b3.",
+    "Glaciar de Celdas (25° N 160° E, lágrima de 0.42 × 0.30 rad): #eef1f6 con bordes de celda #c3cbd8; montañas de hielo #9b9bab en el borde.",
+    "4 criovolcanes #9a6a68 → #784e50 con escarcha fresca #f6f2f4; casquetes #f2f5fa desde ~66°. h = −3000 + gris × 9000."])
+
 MARKS = {"Creus": [("Gran Tormenta", (-28.0, 40.0))], "Norh": [("Gran Volcán", (8.0, -50.0))],
-         "Ceniza": [("Monte Solitario", (12.0, 75.0))],
+         "Ceniza": [("Monte Solitario", (12.0, 75.0))], "Karmen": [("Cara de Fractura", (0.0, 90.0))],
+         "Talia": [("Gran Cuenca", SITES["Talia/GranCuenca"])], "Akira": [("Glaciar de Celdas", SITES["Akira/Glaciar"])],
          "Krax": [("Fundición", SITES["Krax/Fundicion"])],
          "Tenebris": [("Colonia", SITES["Tenebris/Asentamiento"]), ("Restos", SITES["Tenebris/Restos"])]}
 MARKS.update({"Secunda": [("Verona", (0.0, 40.0)), ("Coronas", (-10.0, 130.0))], "Vestigia": [("Cuenca", (10.0, 0.0))],
@@ -156,11 +182,11 @@ def font(size, bold=False):
 
 
 def palette(arr, n=6):
-    a = arr.reshape(-1, 3).astype(int)
-    key = a[:, 0] * 65536 + a[:, 1] * 256 + a[:, 2]
-    u, c = np.unique(key // 4 * 4, return_counts=True)       # agrupa tonos casi iguales
-    o = np.argsort(-c)[:n]
-    return [("#%06x" % u[i], c[i] / len(key)) for i in o]
+    """Tonos dominantes. Las texturas llevan grano (ningún píxel repite color exacto): se cuantizan a n colores."""
+    q = Image.fromarray(np.asarray(arr, np.uint8)).quantize(colors=n, method=Image.Quantize.MEDIANCUT)
+    pal = np.asarray(q.getpalette()[:3 * n]).reshape(-1, 3)
+    c = np.bincount(np.asarray(q).ravel(), minlength=n)[:n]
+    return [("#%02x%02x%02x" % tuple(pal[i]), c[i] / c.sum()) for i in np.argsort(-c) if c[i]]
 
 
 def map_panel(canvas, body, x0, y0, w, h):
