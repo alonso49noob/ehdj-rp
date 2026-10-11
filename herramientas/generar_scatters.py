@@ -118,6 +118,8 @@ PLAN = {
     "Halum": [  # islas de hielo a la deriva y nieve de hidrógeno sobre el mar de neón
         ("Eeloo", "IceSlabsTinySlabs", "LosasHielo", (1.00, 1.03, 1.08), 1.0, ["Islas a la Deriva", "Nieves de Hidrogeno"], None, 2),
         ("Eeloo", "IceSlabsMedSlabs", "BloquesHielo", (1.00, 1.03, 1.08), 1.0, ["Islas a la Deriva"], None, 2),
+        ("Eeloo", "IceSlabsLarge", "IcebergsGrandes", (0.92, 0.98, 1.08), 2.0, ["Islas a la Deriva"], None, 2),
+        ("Eeloo", "IceSlabsGiant", "IcebergsGigantes", (0.92, 0.98, 1.08), 2.0, ["Islas a la Deriva"], None, 2),
     ],
     "Ocrea": [  # lecho violeta, mantos de H2 plateados y glaciares de neón
         ("Mun", "SmallRocks", "RocasLecho", (0.62, 0.58, 0.80), 1.0, ["Lecho Desnudo", "Campos de Fumarolas"], None, None),

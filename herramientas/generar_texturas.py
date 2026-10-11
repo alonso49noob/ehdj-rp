@@ -348,34 +348,49 @@ def creus():
 
 
 # ------------------------------------------------------------------ Halum
+def _blur(a, sigma):
+    """Gauss separable (sin scipy); borde en longitud envuelto, en latitud replicado."""
+    r = int(3 * sigma) + 1
+    k = np.exp(-0.5 * (np.arange(-r, r + 1) / sigma) ** 2)
+    k /= k.sum()
+    out = np.zeros_like(a)
+    for i, w in enumerate(k):
+        out += w * np.roll(a, i - r, 1)
+    a, out = out, np.zeros_like(a)
+    ap = np.pad(a, ((r, r), (0, 0)), mode="edge")
+    for i, w in enumerate(k):
+        out += w * ap[i:i + a.shape[0]]
+    return out
+
+
+def halum_artista():
+    """Mapas del artista (arte/Halum/rocoso-*-704-8192.png, 8192×4096). Altura de 8 bits: el mar llega hasta el gris 237 y
+    las islas ocupan solo 18 niveles (237–255, +704 m): se remapea a la escala del pack (nivel del mar = gris 0.778,
+    mar hasta −3 450 m, islas hasta +704 m) y se suaviza para quitar los escalones. Devuelve (h, color, tierra)."""
+    d = ROOT / "arte" / "Halum"
+    Image.MAX_IMAGE_PIXELS = None
+    g = np.asarray(Image.open(d / "rocoso-height-704-8192.png"))[..., 0].astype(np.float32)
+    land = np.asarray(Image.open(d / "rocoso-mask-704-8192.png"))[..., 2] > 127
+    sea_g, lo_g = 237.0, g.min()
+    h = np.where(g < sea_g, -3450.0 * (sea_g - g) / (sea_g - lo_g), 704.0 * (g - sea_g) / (255.0 - sea_g)).astype(np.float32)
+    h = _blur(h, 2.5)
+    color = np.asarray(Image.open(d / "rocoso-color-704-8192.png").convert("RGB"))
+    return h, color, land
+
+
 def halum():
-    W, H = 4096, 2048
-    P, LAT, LON = grid(W, H)
+    W, H = 8192, 4096
+    P2, LAT2, LON2 = grid(W // 4, H // 4)
     n = Perlin(23)
-    cont = fbm(n, P, (1.8, 1.8, 1.8), 7)
-    t = np.quantile(cont, 0.88)                                # 12 % de islas
-    lo = cont.min()
-    detail = fbm(n, P, (14, 14, 14), 4)
-    h = np.where(cont > t,
-                 950 * np.clip((cont - t) / (cont.max() - t), 0, 1) ** 0.7 + 60 * detail,
-                 -40 - 2300 * np.clip((t - cont) / (t - lo), 0, 1) ** 0.55 + 120 * detail)
-    trench = fbm(n, P, (2.6, 2.6, 2.6), 5, ridged=True)        # fosas del abismo supercrítico
-    h -= np.where(cont < t - 0.04, 1300 * smooth(0.55, 0.9, trench), 0)
-    h = np.clip(h, -3450, 980)
+    h, color, land = halum_artista()
     save(encode_height(h, "Halum"), "Halum", "Height")
 
-    h2 = downsample(h, 2)
-    P2, LAT2, LON2 = grid(W // 2, H // 2)
+    h2 = downsample(h, 4)                                      # 2048×1024
+    land2 = downsample(land.astype(np.float32), 4) > 0.02      # una isla de pocos píxeles no debe desaparecer
     polar = np.abs(LAT2) >= 62
-    surf = np.zeros(h2.shape + (3,), np.float32)
-    deep, mid, shallow = hexrgb("#162444"), hexrgb("#2e4470"), hexrgb("#6f8fb5")
-    land, snow = hexrgb("#dfe8f2"), hexrgb("#f7fbff")
-    s1 = smooth(-2600, -900, h2)[..., None]
-    s2 = smooth(-900, -40, h2)[..., None]
-    surf = deep * (1 - s1) + mid * s1
-    surf = surf * (1 - s2) + shallow * s2
-    surf = np.where((h2 >= 0)[..., None], np.where(polar[..., None], snow, land), surf)
-    save(surf, "Halum", "Surface")                             # color del terreno (PQS)
+    # Terreno real (PQS): el color del artista tal cual, a 4096×2048
+    surf = Image.fromarray(color).resize((W // 2, H // 2), Image.BOX)
+    save(surf, "Halum", "Surface")
 
     # Nubes de hidrógeno: vetas zonales (ruido estirado en el eje polar)
     c = fbm(n, P2, (1.4, 1.4, 13.0), 6) + 0.35 * fbm(n, P2, (4, 4, 34), 4)
@@ -383,18 +398,17 @@ def halum():
     clouds = np.zeros(c.shape + (4,), np.uint8)
     clouds[..., :3] = hexrgb("#edf2f7").astype(np.uint8)
     clouds[..., 3] = np.where(c > t_white, 255, np.where(c > t_mid, 120, 0))
-    save(Image.fromarray(clouds, "RGBA"), "Halum", "Clouds")    # capa para EVE (futuro)
+    save(Image.fromarray(clouds, "RGBA"), "Halum", "Clouds")    # capa para EVE
 
-    tint = fbm(n, P2, (2, 2, 5), 4)
-    base = np.where((tint > np.quantile(tint, 0.82))[..., None], hexrgb("#9db9da"), hexrgb("#aac6e2"))
-    base = np.where((h2 >= 0)[..., None], hexrgb("#b9d1ea"), base)   # islas apenas intuidas bajo 7 atm
+    base = np.asarray(Image.fromarray(color).resize((W // 4, H // 4), Image.BOX), np.float32)
     scaled = np.where((c > t_white)[..., None], hexrgb("#edf2f7"),
                       np.where((c > t_mid)[..., None], hexrgb("#cbdcee"), base))
-    save(scaled, "Halum", "Color", gloss=np.where((c <= t_mid) & (h2 < 0), 0.35, 0.0))   # vista lejana (nubes horneadas)
+    save(Image.fromarray(np.clip(np.dstack([scaled, np.where((c <= t_mid) & ~land2, 0.35 * 255, 0)]), 0, 255).astype(np.uint8)),
+         "Halum", "Color")                                      # vista lejana (nubes horneadas); alfa = brillo del mar
     save(normal_map(c * 4000.0, S.BODIES["Halum"]["radius"], 1.0, detail=0.2), "Halum", "Normal")
 
     names = list(BIOMES["Halum"])
-    idx = np.select([h2 < -2200, h2 < -250, h2 < 0, ~polar], [0, 1, 2, 3], 4)
+    idx = np.select([h2 < -2200, h2 < -250, ~land2, ~polar], [0, 1, 2, 3], 4)
     save(biome_image(idx[::2, ::2], names, BIOMES["Halum"]), "Halum", "Biomes")
 
 
