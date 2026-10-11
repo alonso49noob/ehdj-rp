@@ -1,4 +1,4 @@
-# Mundos Lejanos — planet pack para Kopernicus
+#  FarBeyond, planet pack para la hermosa comunidad de El Hangar de Jeb
 
 Dos sistemas lejanos de Kerbol, en un solo pack.
 
