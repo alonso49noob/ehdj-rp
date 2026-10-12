@@ -1,4 +1,4 @@
-"""Parámetros de los sistemas Creus–Halum y Kraken (fuente única de verdad).
+"""Parámetros de los sistemas Creus–Halum, Kraken y Elara (fuente única de verdad).
 
 Los .cfg de Kopernicus repiten estos números a mano; `validar_pack.py` comprueba
 que coincidan y `generar_atmosferas.py` / `generar_texturas.py` los usan.
@@ -24,7 +24,7 @@ TEX = f"{PACK}/PluginData"        # ruta de texturas relativa a GameData
 BODIES = {
     "Creus": dict(
         system="CreusHalum", parent="Sun", radius=2_100_000, gee=0.80, template="Jool",
-        orbit=dict(a=800 * KAU, e=0.03, i=3.1, lan=47, argpe=120, M0=2.1),
+        orbit=dict(a=880 * KAU, e=0.03, i=3.1, lan=47, argpe=120, M0=2.1),
     ),
     "Halum": dict(
         system="CreusHalum", parent="Creus", radius=690_000, gee=0.55, template="Eve",
@@ -73,21 +73,22 @@ BODIES = {
         system="Kerbol", parent="Skolta", radius=175_000, gee=0.10, template="Mun",
         orbit=dict(a=13_500_000, e=0.02, i=18, lan=60, argpe=0, M0=2.0),
     ),
-    # ---- Termos, Tyrna, Karmen y Talia (fichas del equipo, 28-07): las fichas dan tamaños reales (Termos mide
-    # 4 258 km); en KSP se dividen entre ESCALA, como Kerbin respecto a la Tierra, y se conserva la gravedad.
-    # Cinturón entre Skolta y Dres: Termos es su objeto más masivo (60 % de la masa).
+    # Termos, Tyrna y Karmen (fichas del equipo, 28-07): Termos mide 4 258 km; en KSP ÷ ESCALA con la misma gravedad.
+    # Antes en el cinturón entre Skolta y Dres; ahora es el superviviente interior de Elara, a 3 KAU.
     "Termos": dict(  # planeta enano activo: 5 atm de N2/CO2/H2O/NH3, lagos de agua casi hirviendo, volcanes tropicales
-        system="Kerbol", parent="Sun", radius=212_900, gee=0.2702, template="Laythe",   # 2.65 m/s²
-        orbit=dict(a=33_500_000_000, e=0.025, i=6.5, lan=95, argpe=150, M0=4.0),     # 2.46 KAU
+        system="Elara", parent="Elara", radius=212_900, gee=0.2702, template="Laythe",   # 2.65 m/s²
+        orbit=dict(a=3 * KAU, e=0.025, i=6.5, lan=95, argpe=150, M0=4.0),
     ),
     "Tyrna": dict(  # luna helada con criovulcanismo y la superficie llena de metales
-        system="Kerbol", parent="Termos", radius=58_600, gee=0.0673, template="Minmus",   # 0.66 m/s²
+        system="Elara", parent="Termos", radius=58_600, gee=0.0673, template="Minmus",   # 0.66 m/s²
         orbit=dict(a=3_400_000, e=0.015, i=1.2, lan=30, argpe=0, M0=0.8),
     ),
     "Karmen": dict(  # luna del tamaño de un asteroide, mucho más allá de Tyrna (capturada)
-        system="Kerbol", parent="Termos", radius=4_000, gee=0.003, template="Gilly",
+        system="Elara", parent="Termos", radius=4_000, gee=0.003, template="Gilly",
         orbit=dict(a=21_000_000, e=0.18, i=27, lan=150, argpe=60, M0=3.5),
     ),
+    # ---- Talia (ficha del equipo, 28-07): las fichas dan tamaños reales; en KSP se dividen entre ESCALA,
+    # como Kerbin respecto a la Tierra, y se conserva la gravedad (igual que Termos, ahora en el sistema de Elara).
     # Cinturón exterior, entre Dres y Jool: Talia, segundo objeto más masivo (35 %), sin actividad y lleno de cráteres
     "Talia": dict(
         system="Kerbol", parent="Sun", radius=146_400, gee=0.1336, template="Dres",   # 1.31 m/s²
@@ -156,10 +157,29 @@ BODIES = {
                     orbit=dict(a=735_000_000, e=0.015, i=6, lan=20, argpe=240, M0=0.2)),
     "Hollin": dict(system="Kraken", parent="Kraken", radius=4_000, gee=0.003, template="Gilly",
                    orbit=dict(a=780_000_000, e=0.01, i=1.5, lan=170, argpe=30, M0=2.9)),
+    # (al final del diccionario: las semillas de Detalle_PQS siguen el orden de los cuerpos)
+    # ------------------------------------------------------------------ sistema Elara
+    # Enana naranja K4 V (4 600 K) a 0.3 años luz kerbales (~19 000 KAU), en el lado opuesto a Kraken. Escalada
+    # respecto a Kerbol como una K4 V real respecto al Sol: 0.70 masas y 0.70 radios. Su SOI se fija a mano: la de
+    # Laplace no vale para una estrella de masa comparable a Kerbol (llegaría a 0.26 años luz y tocaría a Kraken).
+    "Elara": dict(
+        system="Elara", kind="star", parent="Sun", radius=0.70 * 261_600_000,
+        gee=0.70 * MU_SUN / (0.70 * 261_600_000) ** 2 / G0, template="Sun", soi=2000 * KAU,
+        orbit=dict(a=0.3 * KLY, e=0.0, i=9, lan=125, argpe=0, M0=4.3),
+    ),
+    # Titanus: «Júpiter» de 12 masas jovianas y 1.2 radios jovianos que se tragó casi todo el sistema; sus restos
+    # forman un sistema de anillos enorme. Radio = 1.2 radios de Jool. Gravedad del análogo real (12 M_J en 1.2 R_J):
+    # 24.79 · 12 / 1.2² = 207 m/s² = 21 g. En unidades de KSP son ~38 masas de Jool (Jool es 3 veces menos denso
+    # que Júpiter) y el 1.3 % de la masa de Elara, como 12 M_J junto a una K4 V real. Sub-enana marrón: brilla en el
+    # infrarrojo por su calor interno (océano supercrítico de agua a 700 K y 218 atm bajo el hidrógeno).
+    "Titanus": dict(
+        system="Elara", parent="Elara", radius=7_200_000, gee=21.0, template="Laythe",
+        orbit=dict(a=6.5 * KAU, e=0.03, i=1.5, lan=40, argpe=260, M0=1.2),
+    ),
 }
 
-# Cometa: perihelio 4.2 KAU, afelio 800 KAU, paso por el perihelio en el año 4
-_rp, _ra = 4.2 * KAU, 800 * KAU
+# Cometa: perihelio 4.2 KAU, afelio 880 KAU (la región de Creus), paso por el perihelio en el año 4
+_rp, _ra = 4.2 * KAU, 880 * KAU
 _a = (_rp + _ra) / 2
 _n = math.sqrt(MU_SUN / _a**3)
 BODIES["Heraldo"]["orbit"] = dict(
@@ -187,6 +207,12 @@ KRAKEN_DISKS = {
 # Luz de Kraken: Kopernicus usa W/m² a 1 KAU (Kerbol = 1360). L = 4πR²σT⁴ = 6.9e19 W
 KRAKEN_TEFF = 1250.0
 KRAKEN_LUMINOSITY = 4 * math.pi * 6_300_000**2 * 5.670374e-8 * KRAKEN_TEFF**4 / (4 * math.pi * KAU**2)
+# Elara: K4 V a escala de Kerbol: L = 0.70² · (4 600 / 5 772)⁴ = 0.20 L_Kerbol -> 269 W/m² a 1 KAU (30 a 3 KAU)
+ELARA_TEFF = 4600.0
+ELARA_LUMINOSITY = 1360.0 * 0.70**2 * (ELARA_TEFF / 5772.0) ** 4
+LUMINOSITY = {"Kraken": KRAKEN_LUMINOSITY, "Elara": ELARA_LUMINOSITY}   # estrellas del pack
+# Anillos de Titanus (milésimas de su radio): de 1.6 a 80 radios (11 500–576 000 km), con huecos
+TITANUS_RING = dict(inner=1600, outer=80000)
 
 # --------------------------------------------------------------------------
 # Atmósferas: perfil T(p) por tramos -> integración hidrostática
@@ -228,6 +254,11 @@ ATMOS = {
     "Termos": dict(p0_atm=5.0, T0=395.0, M=0.02918, gamma=1.33, kappa=0.20,
                    T_tropo=215.0, T_top=250.0, p_top_atm=1e-6, iso_until_atm=None,
                    lat_bias=[(0, 0.0), (25, -2.0), (50, -12.0), (90, -27.0)], scale=10),
+    # Titanus: 78 % H2, 12 % He, 10 % H2O (M = 3.85 g/mol) a 218 atm y 700 K, justo por encima del punto crítico
+    # del agua (647 K, 218 atm): el «mar» es agua supercrítica. Adiabática húmeda (kappa 0.2) hasta 160 K.
+    # Con 21 g la atmósfera es delgadísima frente al radio: unos 90 km hasta 1e-6 atm.
+    "Titanus": dict(p0_atm=218.0, T0=700.0, M=0.00385, gamma=1.38, kappa=0.20,
+                    T_tropo=160.0, T_top=220.0, p_top_atm=1e-6, iso_until_atm=None),
     # Akira: 92 % N2, 5 % CH4, 3 % CO a 1.2 atm (M = 27.4 g/mol), 62 K en el ecuador y ~56 K en los polos.
     # A 62 K el hielo de N2 solo sostendría ~0.09 bar: la atmósfera "sorprendentemente densa y estable" de la ficha
     # la mantienen los criovolcanes. Troposfera casi isoterma; estratosfera templada por el metano, como en Plutón.

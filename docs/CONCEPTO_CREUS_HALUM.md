@@ -11,7 +11,7 @@ Esto explica cuatro cosas del concepto original:
 
 | Rasgo | Explicación |
 |---|---|
-| A 800 KAU, mucho más allá de cualquier otro planeta | Kerbol no los formó: los capturó. Las capturas de planetas errantes acaban en órbitas así de amplias |
+| A 880 KAU, mucho más allá de cualquier otro planeta | Kerbol no los formó: los capturó. Las capturas de planetas errantes acaban en órbitas así de amplias |
 | Halum, casi solo hidrógeno, mantiene un océano líquido | En el espacio interestelar un planeta errante con hidrógeno a presión conserva su calor interno, porque el H₂ comprimido absorbe el infrarrojo. Es la idea de Stevenson (1999) sobre planetas errantes con océanos. Halum sobrevivió así antes de ser capturado |
 | Una separación de 5 KAU | Los binarios anchos se forman ligados y viajan juntos; una captura suave no los separa |
 | El anillo oscuro y Ocrea | Durante la captura, una luna original de Creus se acercó demasiado y se rompió: sus restos son el anillo y Pastora. Más tarde Creus capturó a Ocrea de la nube exterior, por eso gira al revés |

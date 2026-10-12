@@ -21,7 +21,8 @@ OUT = ROOT / "GameData" / S.PACK / "Configs" / "Kraken" / "Parallax_Scatters.cfg
 
 MACHINE = (0.45, 0.40, 0.42)   # acero oscuro de las máquinas
 
-# cuerpo: [(cuerpo de origen, scatter de origen, nombre nuevo, tinte RGB, densidad×, solo_biomas, sin_biomas, minAlt)]
+# cuerpo: [(cuerpo de origen, scatter de origen, nombre nuevo, tinte RGB, densidad×, solo_biomas, sin_biomas,
+#           minAlt o (minAlt, maxAlt))]
 PLAN = {
     "Krax": [
         ("Tylo", "SmallCluster", "RocasGrafito", (0.30, 0.30, 0.33), 1.0, None, ["Fundicion de las Maquinas"], None),
@@ -120,6 +121,23 @@ PLAN = {
         ("Eeloo", "IceSlabsMedSlabs", "BloquesHielo", (1.00, 1.03, 1.08), 1.0, ["Islas a la Deriva"], None, 2),
         ("Eeloo", "IceSlabsLarge", "IcebergsGrandes", (0.92, 0.98, 1.08), 2.0, ["Islas a la Deriva"], None, 2),
         ("Eeloo", "IceSlabsGiant", "IcebergsGigantes", (0.92, 0.98, 1.08), 2.0, ["Islas a la Deriva"], None, 2),
+        # Hielo flotante frente a los continentes de hielo y en sus grietas: icebergs del mar frío de Kerbin, que
+        # Parallax pone a nivel del mar (placementAltitude) sobre cualquier fondo de neón (altitud del terreno < 0)
+        ("Kerbin", "GiantBerg", "TempanosGigantes", (0.95, 1.00, 1.08), 4.0, ["Islas a la Deriva"], None, (-3500, -5)),
+        ("Kerbin", "Icebergs", "Tempanos", (0.95, 1.00, 1.08), 3.0, ["Islas a la Deriva"], None, (-3500, -5)),
+        ("Kerbin", "SmallIcebergs", "TempanosMedianos", (0.95, 1.00, 1.08), 2.0, ["Islas a la Deriva"], None, (-3500, -5)),
+        ("Kerbin", "TinyIcebergs", "TempanosPequenos", (0.95, 1.00, 1.08), 1.0, ["Islas a la Deriva"], None, (-3500, -5)),
+    ],
+    # ---- Elara
+    # Titanus: balsas de espuma mineral flotando en el mar supercrítico (icebergs de Kerbin con el hielo teñido de
+    # roca: sales y sulfuros pardos y ocres); en los Jardines Químicos, costras de colores de las redes químicas vivas
+    "Titanus": [
+        ("Kerbin", "GiantBerg", "BalsasGigantes", (0.62, 0.50, 0.38), 3.0, ["Balsas Minerales", "Jardines Quimicos"], None, (-9000, -5)),
+        ("Kerbin", "Icebergs", "Balsas", (0.70, 0.58, 0.42), 3.0, ["Balsas Minerales", "Jardines Quimicos"], None, (-9000, -5)),
+        ("Kerbin", "SmallIcebergs", "BalsasMedianas", (0.78, 0.66, 0.46), 2.0, ["Balsas Minerales"], None, (-9000, -5)),
+        ("Kerbin", "TinyIcebergs", "Espuma", (0.85, 0.80, 0.66), 1.5, ["Balsas Minerales", "Dorsales de Disolucion"], None, (-9000, -5)),
+        ("Kerbin", "SmallIcebergs", "JardinVerde", (0.35, 0.80, 0.50), 2.0, ["Jardines Quimicos"], None, (-9000, -5)),
+        ("Kerbin", "TinyIcebergs", "JardinNaranja", (1.10, 0.55, 0.20), 2.0, ["Jardines Quimicos"], None, (-9000, -5)),
     ],
     "Ocrea": [  # lecho violeta, mantos de H2 plateados y glaciares de neón
         ("Mun", "SmallRocks", "RocasLecho", (0.62, 0.58, 0.80), 1.0, ["Lecho Desnudo", "Campos de Fumarolas"], None, None),
@@ -259,7 +277,7 @@ SUBDIV = {"Krax": (7, 700), "Scarch": (6, 600), "Tenebris": (6, 600), "Salus": (
           "Hollin": (5, 350),
           "Halum": (6, 600), "Ocrea": (6, 500), "Ceniza": (6, 500), "Nox": (5, 350), "Prima": (5, 350),
           "Secunda": (5, 350), "Pastora": (5, 350), "Heraldo": (5, 350), "Azabache": (5, 350), "Brea": (5, 350),
-          "Tizne": (5, 350), "Escoria": (5, 350), "Karmen": (5, 350)}
+          "Tizne": (5, 350), "Escoria": (5, 350), "Karmen": (5, 350), "Titanus": (6, 600)}
 PQS_OUT = OUT.with_name("Parallax_PQS.cfg")
 
 
@@ -297,7 +315,10 @@ def build():
             dist = sc.node("Distribution")
             if dens != 1:   # las agujas de Moho tienen spawnChance 0.02: en sus biomas, que abunden
                 dist.set("spawnChance", f"{min(1.0, float(dist.get('spawnChance')) * dens):g}")
-            if min_alt is not None:
+            if isinstance(min_alt, tuple):   # (mín, máx) de altitud del terreno: p. ej. solo bajo el mar
+                dist.set("minAltitude", str(min_alt[0]))
+                dist.set("maxAltitude", str(min_alt[1]))
+            elif min_alt is not None:
                 dist.set("minAltitude", str(min_alt))
             names = list(BIOMES[body]) if body in BIOMES else list(BIOMES["_pequeno"])
             black = [n for n in names if n not in only] if only else list(deny or [])

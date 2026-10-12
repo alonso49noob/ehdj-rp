@@ -43,8 +43,11 @@ SCATTERER = {
     "Skolta": dict(sun="Sun", flat=True, load=3e8, unload=5e8, start=1, HR=10, HM=6,
                    betaR=(0.0280, 0.0180, 0.0080), mie=0.0400, mieG=0.75, ozone=False, eclipse=["Ceniza"]),
     # Termos: 5 atm de N2/CO2 con vapor: cielo azul pálido, casi blanco (mucha Mie del vapor). Atmósfera de 51 km.
-    "Termos": dict(sun="Sun", flat=True, load=3e8, unload=5e8, start=1, HR=4.5, HM=1.5,
+    "Termos": dict(sun="Elara", flat=True, load=3e8, unload=5e8, start=1, HR=4.5, HM=1.5,
                    betaR=(0.0160, 0.0300, 0.0560), mie=0.0200, mieG=0.80, ozone=False, eclipse=["Tyrna"]),
+    # Titanus: 218 atm de H2 con nubes de agua: cielo pardo anaranjado y muy brumoso. Con 21 g la atmósfera mide 53 km
+    "Titanus": dict(sun="Elara", flat=True, load=8e8, unload=1.5e9, start=1, HR=6, HM=2,
+                    betaR=(0.0300, 0.0200, 0.0120), mie=0.0350, mieG=0.80, ozone=False, eclipse=[]),
     # Akira: 1.2 atm de N2 a 62 K con bruma de metano: cielo azul oscuro, como el de Plutón
     "Akira": dict(sun="Sun", flat=True, load=3e8, unload=5e8, start=1, HR=12, HM=4,
                   betaR=(0.0060, 0.0130, 0.0300), mie=0.0080, mieG=0.75, ozone=False, eclipse=[]),
@@ -87,9 +90,9 @@ ALBEDO = {"Creus": 0.70, "Halum": 0.55, "Ocrea": 0.85, "Pastora": 0.05, "Prima":
           "Heraldo": 0.04, "Krax": 0.03, "Scarch": 0.35, "Tenebris": 0.10, "Salus": 0.30, "Vestigia": 0.12,
           "Nox": 0.02, "Lumen": 0.35, "Ignea": 0.15, "Fuligo": 0.01, "Caligo": 0.015, "Atra": 0.012,
           "Azabache": 0.02, "Brea": 0.015, "Tizne": 0.012, "Escoria": 0.02, "Hollin": 0.01, "Norh": 0.40, "Skolta": 0.35, "Ceniza": 0.09,
-          "Termos": 0.50, "Tyrna": 0.60, "Karmen": 0.15, "Talia": 0.12, "Akira": 0.65}
+          "Termos": 0.50, "Tyrna": 0.60, "Karmen": 0.15, "Talia": 0.12, "Akira": 0.65, "Titanus": 0.50}
 THICK = {"Creus": 1.0, "Halum": 1.0, "Scarch": 1.0, "Tenebris": 0.15, "Salus": 0.6, "Norh": 1.0, "Skolta": 1.0,
-         "Termos": 1.0, "Akira": 0.8}
+         "Termos": 1.0, "Akira": 0.8, "Titanus": 1.0}
 HAZE = {"Scarch": 0.65, "Norh": 0.70, "Skolta": 0.40}   # peso de la neblina horneada en _Color (generar_texturas)
 
 
@@ -144,6 +147,8 @@ def eve_textures(body, cfg):
     Image.fromarray((cov * 255).astype(np.uint8), "L").save(GD_TEX / body / f"{body}_EVECoverage.png", optimize=True)
     rgba = np.zeros(cov.shape + (4,), np.uint8)
     rgba[..., :3] = cfg["color"]
+    if body == "Creus" and (ROOT / "arte" / "Creus" / "nubes-artista.png").exists():   # nubes con el color del artista
+        rgba[..., :3] = img(body, "Color").astype(np.uint8)
     rgba[..., 3] = (cov * 255).astype(np.uint8)
     Image.fromarray(rgba, "RGBA").save(GD_TEX / body / f"{body}_EVEClouds.png", optimize=True)
     if cfg["swap"]:          # vista lejana sin nubes: mar del color del océano, tierra = terreno real
@@ -402,11 +407,12 @@ def scatterer_cfg():
 	}}
 }}
 """)
-    # Destello de Kraken: el de Kerbol, en rojo apagado y más tenue
-    flare = (KSP / "StockScattererConfigs/Sunflares/Sun.cfg").read_text(encoding="utf-8").lstrip("\ufeff")
-    flare = flare.replace("\n    Sun\n", "\n    Kraken\n", 1).replace("flareColor = 1.0,1.0,1.0", "flareColor = 0.6,0.32,0.28", 1)
+    # Destellos de Kraken (rojo apagado y más tenue) y de Elara (naranja): el de Kerbol, recoloreado
+    sun = (KSP / "StockScattererConfigs/Sunflares/Sun.cfg").read_text(encoding="utf-8").lstrip("\ufeff")
+    flare = "\n".join(sun.replace("\n    Sun\n", f"\n    {star}\n", 1).replace("flareColor = 1.0,1.0,1.0", f"flareColor = {col}", 1)
+                      for star, col in (("Kraken", "0.6,0.32,0.28"), ("Elara", "1.0,0.72,0.45")))
     head = ["// GENERADO por herramientas/generar_visuales.py — no editar a mano.",
-            "// Scatterer: atmósferas, océanos y destello de Kraken. Usa las cáusticas y destellos de StockScattererConfigs."]
+            "// Scatterer: atmósferas, océanos y destellos de Kraken y Elara. Usa las cáusticas y destellos de StockScattererConfigs."]
     patch = ["@Scatterer_planetsList:NEEDS[Scatterer]:FOR[MundosLejanos]", "{", "\t@scattererCelestialBodies", "\t{",
              "".join(items).rstrip("\n"), "\t}", "}"]
     return "\n".join(head + patch) + "\n\n" + "\n".join(atmos) + "\n" + "\n".join(oceans) + "\n" + flare
@@ -431,7 +437,9 @@ def planetshine_cfg():
     out = ["// GENERADO por herramientas/generar_visuales.py — no editar a mano.",
            "// PlanetShine: luz que cada cuerpo refleja sobre las naves (color medio de su textura, intensidad ∝ albedo).",
            "PlanetshineCelestialBody:NEEDS[PlanetShine]", "{", "\tname = Kraken", "\tisSun = True",
-           "\tcolor = 255,140,122", "\tintensity = 2", "\tatmosphereAmbient = 0", "\tgroundAmbientOverride = 1", "}"]
+           "\tcolor = 255,140,122", "\tintensity = 2", "\tatmosphereAmbient = 0", "\tgroundAmbientOverride = 1", "}",
+           "PlanetshineCelestialBody:NEEDS[PlanetShine]", "{", "\tname = Elara", "\tisSun = True",
+           "\tcolor = 255,204,158", "\tintensity = 2", "\tatmosphereAmbient = 0", "\tgroundAmbientOverride = 1", "}"]
     for body, alb in ALBEDO.items():
         col = img(body, "Color").reshape(-1, 3).mean(axis=0)
         rgb = ",".join(str(int(round(c))) for c in col)
@@ -449,10 +457,10 @@ def main():
     (OUT / "Scatterer.cfg").write_text(scatterer_cfg(), encoding="utf-8")
     (OUT / "EVE.cfg").write_text(eve_cfg(), encoding="utf-8")
     (OUT / "PlanetShine.cfg").write_text(planetshine_cfg(), encoding="utf-8")
-    print(f"Scatterer: {len(SCATTERER)} atmósferas, {len(OCEANS)} océanos, destello de Kraken")
+    print(f"Scatterer: {len(SCATTERER)} atmósferas, {len(OCEANS)} océanos, destellos de Kraken y Elara")
     print(f"EVE: {len(EVE)} capas (2D + volumétricas V5); texturas sin nubes para "
           f"{', '.join(b for b, c in EVE.items() if c['swap'])}")
-    print(f"PlanetShine: {len(ALBEDO) + 1} cuerpos")
+    print(f"PlanetShine: {len(ALBEDO) + 2} cuerpos")
 
 
 if __name__ == "__main__":

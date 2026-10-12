@@ -86,7 +86,7 @@ def build(name):
     pk.append((top, 0.0, 0.0))
     tk.append((top, A["T_top"], 0.0))
 
-    f = lambda x: f"{x:.6g}"
+    f = lambda x: f"{x:.6g}" if abs(x) < 1e4 else f"{x:.8g}"   # 218 atm = 22 088.85 kPa: con 6 cifras no basta
     L = [BEGIN + " (herramientas/generar_atmosferas.py; no editar a mano)",
          f"altitude = {top}",
          f"staticPressureASL = {f(A['p0_atm'] * S.ATM)}",
@@ -101,7 +101,7 @@ def build(name):
     L += ["}"]
     # Variación con la latitud (lat_bias): KSP suma temperatureLatitudeBiasCurve(lat) y la escala con
     # temperatureSunMultCurve(altura), que vale 1 en el suelo y 0 en la tropopausa.
-    # Sin lat_bias, temperatura uniforme (a 800 KAU o junto a una enana T la luz apenas cuenta).
+    # Sin lat_bias, temperatura uniforme (a 880 KAU o junto a una enana T la luz apenas cuenta).
     curves = {c: ["\tkey = 0 0 0 0", f"\tkey = {x1} 0 0 0"]
               for c, x1 in (("temperatureSunMultCurve", top), ("temperatureLatitudeBiasCurve", 90),
                             ("temperatureLatitudeSunMultCurve", 90), ("temperatureAxialSunBiasCurve", 1),

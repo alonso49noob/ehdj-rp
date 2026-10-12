@@ -35,6 +35,7 @@ HEIGHTMAPS = {
     "Karmen":   dict(offset=-1500, deformity=3000),
     "Talia":    dict(offset=-5500, deformity=11000),     # Gran Cuenca −4.5 km … anillos y tierras altas
     "Akira":    dict(offset=-3000, deformity=9000),      # Glaciar de Celdas −2.3 km … montañas de hielo y criovolcanes
+    "Titanus":  dict(offset=-9000, deformity=8600),      # todo bajo el mar supercrítico: fosas −8.9 km … dorsales −900 m
     # sistema Kraken
     "Krax":     dict(offset=-1800, deformity=3600),
     "Scarch":   dict(offset=-4000, deformity=9000),
@@ -72,6 +73,8 @@ BIOMES = {
     "Halum": {"Abismo Supercritico": "#1b2a6b", "Mar de Neon": "#3a6fd8",
               "Bajos Helados": "#6fd6e8", "Islas a la Deriva": "#e8d36f",
               "Nieves de Hidrogeno": "#f4f4f4"},
+    "Titanus": {"Fosas del Manto": "#2a1f4f", "Mar Supercritico": "#4f6fa8", "Dorsales de Disolucion": "#c87a3a",
+                "Balsas Minerales": "#d8c690", "Jardines Quimicos": "#58c878"},
     "Ocrea": {"Lecho Desnudo": "#6a4c9c", "Mantos de Hidrogeno": "#b8a8f0",
               "Glaciares de Neon": "#5fd0e0", "Campos de Fumarolas": "#e04070",
               "Polos de Escarcha": "#f8f8f8"},
@@ -242,8 +245,8 @@ def biome_image(index, names, table):
 # 2) Brillo: el shader de la vista lejana lee el ALFA de _Color como máscara especular ("Base (RGB) Gloss (A)").
 #    Un PNG RGB es alfa = 1: todo el planeta brilla como plástico. Con `gloss` se guarda RGBA (0 = mate; mares > 0).
 #    Sin `gloss` queda RGB: es para los cuerpos cuyo PQS usa también _Color; su brillo se fija con specColor en el .cfg.
-GRAIN = {"Creus": 0.03, "Halum": 0.04, "Norh": 0.05, "Skolta": 0.05, "Scarch": 0.05, "Termos": 0.05, "Akira": 0.05}
-BANDED = {"Creus", "Halum", "Norh", "Skolta", "Scarch"}   # nubes en bandas: grano estirado en longitud y sin matiz
+GRAIN = {"Creus": 0.03, "Titanus": 0.03, "Halum": 0.04, "Norh": 0.05, "Skolta": 0.05, "Scarch": 0.05, "Termos": 0.05, "Akira": 0.05}
+BANDED = {"Creus", "Titanus", "Halum", "Norh", "Skolta", "Scarch"}   # nubes en bandas: grano estirado en longitud y sin matiz
 GLOSS_SEA, GLOSS_ICE = 0.6, 0.16
 ICE_ALPHA = round(GLOSS_ICE * 255)                   # alfa exacto del hielo de Salus (generar_visuales lo busca)
 _NOISE = {}
@@ -325,9 +328,18 @@ def creus():
     color = posterize(field, pal, [0.57, 0.23, 0.15, 0.05])
     color[(d_storm >= 0.55) & (d_storm < 1)] = hexrgb("#eaefef")
     color[(d_storm >= 1) & (d_storm < 1.25)] = hexrgb("#d7e0e0")
+    relief = downsample(field, 2) * 2500.0
+    # Nubes del artista (arte/Creus/nubes-artista.png): bandas y dos vórtices. Sustituye el color procedural; la
+    # Gran Tormenta Blanca pasa al vórtice grande del artista (132° E, 13.5° S) para que el bioma coincida.
+    art_path = ROOT / "arte" / "Creus" / "nubes-artista.png"
+    if art_path.exists():
+        color = np.asarray(Image.open(art_path).convert("RGB").resize((W, H), Image.LANCZOS), np.float32)
+        lum = downsample(color.mean(axis=2), 2)
+        relief = (lum - lum.mean()) / lum.std() * 600.0
+        d_storm = np.hypot((LON - 132) / 17, (LAT + 13.5) / 15)
     save(color, "Creus", "Color", gloss=0.0)
     # gigante gaseoso: casi liso (relieve suave de las nubes, sin los escalones de los tonos posterizados)
-    save(normal_map(downsample(field, 2) * 2500.0, S.BODIES["Creus"]["radius"], 1.0, detail=0.15), "Creus", "Normal")
+    save(normal_map(relief, S.BODIES["Creus"]["radius"], 1.0, detail=0.15), "Creus", "Normal")
 
     names = list(BIOMES["Creus"])
     a = np.abs(latw)
@@ -378,18 +390,59 @@ def halum_artista():
     return h, color, land
 
 
+SHELF_H = 160.0         # techo de las plataformas (m): hielo de ~700 m que flota con un 23 % fuera del neón;
+                        # el ruido del PQS (±60 m) y de Detalle_PQS (FLAT 0.4: ±97 m) no lo hunde
+SHELF_REACH = 160.0     # km máximos que una plataforma se adentra en el mar desde su isla
+CALVING = 10.0          # km de mar más allá del frente de hielo que siguen siendo «Islas a la Deriva» (icebergs)
+
+
+def halum_plataformas(land, W, H):
+    """Continentes de hielo flotante: plataformas que crecen desde las islas hasta SHELF_REACH km mar adentro,
+    con frente recortado y grietas (canales de neón abierto). Devuelve f (km hasta el frente: > 0 dentro del
+    hielo) a W×H y el alcance de cada costa a W/4×H/4, para recortar la franja de icebergs."""
+    w0, h0 = W // 8, H // 8                                    # 1024×512: distancia exacta a la tierra
+    P0, LAT0, _ = grid(w0, h0)
+    land0 = downsample(land.astype(np.float32), 8) > 0.02
+    X = np.stack([p.ravel() for p in P0], 1)
+    pts = X[land0.ravel()]
+    near = np.full(X.shape[0], -1.0, np.float32)
+    for k in range(0, X.shape[0], 16384):                      # coseno del ángulo a la tierra más cercana
+        near[k:k + 16384] = (X[k:k + 16384] @ pts.T).max(axis=1)
+    dist = (S.BODIES["Halum"]["radius"] / 1000 * np.arccos(np.clip(near, -1, 1))).reshape(h0, w0)
+    n = Perlin(4401)
+    reach = SHELF_REACH * smooth(-0.25, 0.35, fbm(n, P0, (2.0, 2.0, 2.0), 4)) * smooth(60, 48, np.abs(LAT0))
+    reach += 35.0 * fbm(n, P0, (9, 9, 9), 4)                  # contorno de continente, no de halo
+    up = lambda a, w, h: np.asarray(Image.fromarray(a.astype(np.float32), "F").resize((w, h), Image.BILINEAR))
+    w1, h1 = W // 2, H // 2                                    # 4096×2048: frente recortado y grietas
+    P1 = grid(w1, h1)[0]
+    f = up(reach - dist, w1, h1) + 9.0 * fbm(n, P1, (45, 45, 45), 4)
+    f -= 4.0 * smooth(0.86, 0.95, fbm(Perlin(4402), P1, (22, 22, 22), 3, ridged=True))
+    return up(f, W, H), up(reach, W // 4, H // 4)
+
+
 def halum():
     W, H = 8192, 4096
     P2, LAT2, LON2 = grid(W // 4, H // 4)
     n = Perlin(23)
     h, color, land = halum_artista()
+    f, reach2 = halum_plataformas(land, W, H)
+    ice = smooth(0.0, 1.2, f) * ~land                          # 1 = plataforma (el frente cae en ~1 km)
+    h = np.where(h < SHELF_H, h + (SHELF_H - h) * ice, h)
     save(encode_height(h, "Halum"), "Halum", "Height")
 
     h2 = downsample(h, 4)                                      # 2048×1024
-    land2 = downsample(land.astype(np.float32), 4) > 0.02      # una isla de pocos píxeles no debe desaparecer
+    f2 = downsample(f, 4)
+    shelf2 = downsample(ice, 4) > 0.5
+    land2 = (downsample(land.astype(np.float32), 4) > 0.02) | shelf2   # una isla de pocos píxeles no debe desaparecer
     polar = np.abs(LAT2) >= 62
-    # Terreno real (PQS): el color del artista tal cual, a 4096×2048
-    surf = Image.fromarray(color).resize((W // 2, H // 2), Image.BOX)
+    # Hielo de las plataformas: blanco azulado; más azul junto al frente (hielo joven), más blanco tierra adentro
+    def paint(img, k):
+        a, t = downsample(ice, k), smooth(0.0, 40.0, downsample(f, k))[..., None]
+        rgb = hexrgb("#c9dbe8") * (1 - t) + hexrgb("#e8eef3") * t
+        return (img * (1 - a[..., None]) + rgb * a[..., None]).astype(np.uint8)
+    # Terreno real (PQS): el color del artista tal cual, a 4096×2048, con las plataformas encima
+    surf = np.asarray(Image.fromarray(color).resize((W // 2, H // 2), Image.BOX), np.float32)
+    surf = Image.fromarray(paint(surf, 2))
     save(surf, "Halum", "Surface")
 
     # Nubes de hidrógeno: vetas zonales (ruido estirado en el eje polar)
@@ -400,7 +453,7 @@ def halum():
     clouds[..., 3] = np.where(c > t_white, 255, np.where(c > t_mid, 120, 0))
     save(Image.fromarray(clouds, "RGBA"), "Halum", "Clouds")    # capa para EVE
 
-    base = np.asarray(Image.fromarray(color).resize((W // 4, H // 4), Image.BOX), np.float32)
+    base = paint(np.asarray(Image.fromarray(color).resize((W // 4, H // 4), Image.BOX), np.float32), 4)
     scaled = np.where((c > t_white)[..., None], hexrgb("#edf2f7"),
                       np.where((c > t_mid)[..., None], hexrgb("#cbdcee"), base))
     save(Image.fromarray(np.clip(np.dstack([scaled, np.where((c <= t_mid) & ~land2, 0.35 * 255, 0)]), 0, 255).astype(np.uint8)),
@@ -408,8 +461,88 @@ def halum():
     save(normal_map(c * 4000.0, S.BODIES["Halum"]["radius"], 1.0, detail=0.2), "Halum", "Normal")
 
     names = list(BIOMES["Halum"])
-    idx = np.select([h2 < -2200, h2 < -250, ~land2, ~polar], [0, 1, 2, 3], 4)
+    # Islas a la Deriva = islas + plataformas + la franja de mar con icebergs desprendidos frente al hielo
+    calving = (f2 > -CALVING) & (reach2 > 5) & ~polar & ~land2
+    idx = np.select([calving, h2 < -2200, h2 < -250, ~land2, ~polar], [3, 0, 1, 2, 3], 4)
     save(biome_image(idx[::2, ::2], names, BIOMES["Halum"]), "Halum", "Biomes")
+    km2 = lambda m: (m * np.cos(np.radians(LAT2)) * (2 * np.pi * S.BODIES["Halum"]["radius"] / 1000 / (W // 4)) ** 2).sum()
+    print(f"  tierra: islas {km2(land2 & ~shelf2):,.0f} km², plataformas {km2(shelf2):,.0f} km², "
+          f"franja de icebergs {km2(calving):,.0f} km²")
+
+
+# ------------------------------------------------------------------ Titanus (sistema de Elara)
+def titanus():
+    """Sub-enana marrón de 12 masas jovianas con océano de agua supercrítica (218 atm, 700 K) y anillos inmensos.
+
+    Desde fuera solo se ven las nubes: bandas de vapor condensado color crema, cinturones pardos de sulfuros y
+    óvalos de tormenta. Debajo, el fondo del manto (todo bajo el mar): fosas, llanuras y dorsales donde el agua
+    supercrítica disuelve la roca. Lo disuelto precipita como espuma mineral llena de hidrógeno, más ligera que el
+    agua supercrítica, y las corrientes la juntan en balsas: los biomas de balsas siguen las convergencias."""
+    W, H = 4096, 2048
+    P, LAT, LON = grid(W, H)
+    n = Perlin(4801)
+    # Fondo del manto: llanura abisal ondulada, fosas y dorsales de disolución (cordilleras de crestas)
+    base = 0.6 * fbm(n, P, (1.6, 1.6, 1.6), 6) + 0.4 * fbm(n, P, (4, 4, 4), 5)
+    ridge = fbm(n, P, (2.4, 2.4, 2.4), 6, ridged=True)
+    h = -6200 + 2600 * base + 4200 * smooth(0.55, 0.9, ridge) + 250 * fbm(n, P, (30, 30, 30), 3)
+    h = np.clip(h, -8950, -900)                    # Detalle_PQS añade colinas de hasta 400 m: que no asomen
+    save(encode_height(h, "Titanus"), "Titanus", "Height")
+
+    P2, LAT2, LON2 = grid(W // 2, H // 2)
+    h2 = downsample(h, 2)
+    dors = h2 > -3200
+    # Balsas: las corrientes zonales las acumulan en franjas de convergencia (estiradas en longitud), más
+    # densas a sotavento de las dorsales, que es donde se forman
+    cur = fbm(n, P2, (2.0, 2.0, 9.0), 5) + 0.6 * smooth(-4500, -2500, h2) - 0.35 * smooth(55, 75, np.abs(LAT2))
+    rafts = cur > wquantile(cur, 0.84, np.cos(np.radians(LAT2)))         # ~16 % del océano
+    life = rafts & (fbm(Perlin(4802), P2, (6, 6, 6), 4) > 0.12) & (np.abs(LAT2) < 50)
+    # Terreno real (PQS, solo visible bajo el mar): peridotita verdosa oscura, sales y sulfuros claros en las dorsales
+    rock = ramp(h2 + 600 * fbm(n, P2, (12, 12, 12), 3), ["#55604f", "#3f473c", "#2c312b"])
+    salt = ramp(fbm(n, P2, (20, 20, 20), 3), ["#e0d2a8", "#c9a86a", "#a8723c"])
+    surf = rock * (1 - smooth(-3600, -2400, h2)[..., None]) + salt * smooth(-3600, -2400, h2)[..., None]
+    save(surf, "Titanus", "Surface")
+
+    # Vista lejana: nubes en bandas (no se ve el océano: 218 atm de hidrógeno con nubes de agua)
+    latw = LAT2 + 5 * fbm(n, P2, (2.2, 2.2, 7.0), 5)
+    belts = 0.5 + 0.5 * np.sin(np.radians(latw) * 11 + 0.8 * np.sin(np.radians(latw) * 3))
+    swirl = fbm(n, P2, (1.8, 1.8, 10.0), 6)
+    field = belts + 0.45 * swirl
+    rng = np.random.default_rng(4803)
+    X = np.dstack(P2)
+    storms = np.zeros(field.shape, np.float32)
+    for _ in range(7):                                                    # óvalos de tormenta claros
+        c = random_unit(rng)
+        if abs(c[2]) < 0.75:
+            u, v = tangent_uv(X, c, 1.0)
+            d = np.hypot(u / rng.uniform(0.05, 0.11), v / 0.035)
+            storms = np.maximum(storms, np.where(X @ c > 0, smooth(1.0, 0.6, d), 0))
+    field = field + 0.9 * storms
+    color = ramp(field, ["#f3e7cf", "#e2c9a0", "#c99f74", "#a5704f", "#7a4a36"])
+    save(color, "Titanus", "Color", gloss=0.0)
+    save(normal_map(downsample(field, 2) * 3000.0, S.BODIES["Titanus"]["radius"], 1.0, detail=0.15), "Titanus", "Normal")
+
+    names = list(BIOMES["Titanus"])
+    fosas = h2 < wquantile(h2, 0.10, np.cos(np.radians(LAT2)))           # el 10 % más hondo
+    idx = np.select([life, rafts, dors, fosas], [4, 3, 2, 0], 1)
+    save(biome_image(idx[::2, ::2], names, BIOMES["Titanus"]), "Titanus", "Biomes")
+
+    # Anillos: de 1.6 a 80 radios. Tira horizontal; u = 0 borde exterior, u = 1 interior (como en Creus).
+    u = (np.arange(4096) + 0.5) / 4096
+    r = 80 - u * (80 - 1.6)                                               # radios de Titanus
+    lr = np.log(r)
+    a = 0.85 * smooth(1.6, 2.2, r) * smooth(80, 45, r)                     # bordes suaves; el exterior se desvanece
+    a *= 0.55 + 0.45 * smooth(25, 6, r)                                    # más densos dentro
+    for c, w, depth in ((3.1, 0.05, 0.95), (7.5, 0.06, 0.9), (13, 0.04, 0.8), (21, 0.08, 0.97), (34, 0.05, 0.7)):
+        a *= 1 - depth * np.exp(-((lr - np.log(c)) / w) ** 2)             # huecos (resonancias, lunas que se tragó)
+    a *= 0.75 + 0.25 * np.sin(lr * 140) * np.sin(lr * 57 + 1)              # anillos finos
+    tint = np.clip((np.log(r) - np.log(1.6)) / (np.log(80) - np.log(1.6)), 0, 1)
+    rgb = hexrgb("#b9a891")[None] * (1 - tint[:, None]) + hexrgb("#d8dde2")[None] * tint[:, None]   # roca dentro, hielo fuera
+    ring = np.zeros((8, 4096, 4), np.uint8)
+    ring[..., :3] = rgb.astype(np.uint8)
+    ring[..., 3] = (np.clip(a, 0, 1) * 255).astype(np.uint8)
+    save(Image.fromarray(ring, "RGBA"), "Titanus", "Ring")
+    km2 = lambda m: (m * np.cos(np.radians(LAT2))).sum() / np.cos(np.radians(LAT2)).sum() * 100
+    print(f"  balsas {km2(rafts):.1f} % (con vida {km2(life):.1f} %), dorsales {km2(dors & ~rafts):.1f} %")
 
 
 # ------------------------------------------------------------------ Ocrea
@@ -1665,7 +1798,7 @@ def kraken():
 
 
 JOBS = {"Creus": creus, "Halum": halum, "Ocrea": ocrea, "Norh": norh, "Skolta": skolta,
-        "Termos": termos, "Talia": talia, "Akira": akira,
+        "Termos": termos, "Talia": talia, "Akira": akira, "Titanus": titanus,
         "Kraken": kraken, "Krax": krax, "Scarch": scarch, "Tenebris": tenebris, "Salus": salus, "Ignea": ignea,
         **{b: (lambda b=b: small(b)) for b in SMALL}}
 

@@ -1,11 +1,11 @@
 #  FarBeyond, planet pack para la hermosa comunidad de El Hangar de Jeb
 
-Dos sistemas lejanos de Kerbol y, en el propio sistema de Kerbol, dos planetas nuevos, tres planetas enanos y sus lunas, en un solo pack.
+Tres sistemas lejanos de Kerbol y, en el propio sistema de Kerbol, dos planetas nuevos, dos planetas enanos y sus lunas, en un solo pack.
 
-### Sistema Creus–Halum (800 KAU)
+### Sistema Creus–Halum (880 KAU)
 Un binario errante capturado por Kerbol:
 - **Creus**, un gigante de hielo blanco con anillo oscuro;
-- **Halum**, un mundo de hidrógeno con océano de neón y 7 atm, a 5 KAU de Creus;
+- **Halum**, un mundo de hidrógeno con océano de neón y 7 atm, a 5 KAU de Creus, con continentes de hielo flotante que crecen desde sus islas y témpanos a la deriva (Parallax);
 - **Ocrea**, una luna retrógrada cubierta de escarcha de hidrógeno y glaciares de neón, a ~6 K;
 - **Pastora**, una luna pastora del anillo;
 - **Prima** y **Secunda**, los troyanos de Halum;
@@ -42,16 +42,22 @@ Un "Titán cálido" del tamaño de Kerbin, en una órbita inclinada 19°:
 
 ![Skolta](docs/skolta/preview_skolta.png)
 
-### Termos y Talia (cinturones del sistema de Kerbol)
-Dos planetas enanos que reciben buena parte de los impactos de sus cinturones:
-- **Termos** (entre Skolta y Dres), el 60 % de la masa de su cinturón. Es muy activo:
+### Sistema Elara (0.3 años luz kerbales, ~19 000 KAU)
+Una enana naranja K4 V (4 600 K, 0.70 masas de Kerbol) cuyo sistema casi vació un gigante:
+- **Titanus**, una sub-enana marrón de 12 masas jovianas y 1.2 radios de Jool, a 6.5 KAU, que se tragó casi todo lo que orbitaba Elara:
+  - un sistema de anillos inmenso, de 1.6 a 80 radios (576 000 km);
+  - 21 g, 218 atm y 700 K: un océano de agua supercrítica que disuelve el manto;
+  - balsas flotantes de espuma mineral (Parallax) y, en algunas, redes químicas de colores que quizá estén vivas.
+- **Termos**, el superviviente interior, a 3 KAU. Es un planeta enano muy activo:
   - 5 atm de nitrógeno, CO₂, vapor y amoníaco, a más de 100 °C;
   - lagos inmensos de agua lechosa casi hirviendo (a 5 atm hierve a 152 °C), con terrazas blancas de sílice;
   - volcanes y pozos ácidos de colores en los trópicos.
 - Sus lunas: **Tyrna**, helada, criovolcánica y llena de metales, y **Karmen**, un fragmento metálico capturado.
-- **Talia** (cinturón exterior, entre Dres y Jool), muerta y saturada de cráteres: la Gran Cuenca y afloramientos de hierro y níquel.
 
 ![Termos](docs/termos/preview_termos.png)
+
+### Talia (cinturón exterior del sistema de Kerbol)
+- **Talia** (entre Dres y Jool), muerta y saturada de cráteres: la Gran Cuenca y afloramientos de hierro y níquel.
 
 ### Akira (200 KAU)
 Un mundo transneidoniano de hielos de nitrógeno y metano, de 900 km:
@@ -62,7 +68,7 @@ Un mundo transneidoniano de hielos de nitrógeno y metano, de 900 km:
 
 > Las texturas actuales son **provisionales**, generadas por código. Las listas de las que hay que pintar están en
 > [docs/TEXTURAS.md](docs/TEXTURAS.md) (Creus–Halum) y [docs/kraken/TEXTURAS.md](docs/kraken/TEXTURAS.md) (Kraken). Norh: [docs/norh/DISENO.md](docs/norh/DISENO.md). Skolta: [docs/skolta/DISENO.md](docs/skolta/DISENO.md).
-> Termos, Tyrna, Karmen y Talia: [docs/termos/DISENO.md](docs/termos/DISENO.md). Akira: [docs/akira/DISENO.md](docs/akira/DISENO.md).
+> Termos, Tyrna, Karmen y Talia: [docs/termos/DISENO.md](docs/termos/DISENO.md). Elara y Titanus: [docs/elara/DISENO.md](docs/elara/DISENO.md). Akira: [docs/akira/DISENO.md](docs/akira/DISENO.md).
 
 ## Instalación
 
@@ -79,7 +85,7 @@ Un mundo transneidoniano de hielos de nitrógeno y metano, de 900 km:
 | EVE (Blackrack) + StockVolumetricClouds | *Opcional*: nubes 2D y volumétricas V5 |
 | PlanetShine | *Opcional*: luz reflejada por cada mundo |
 
-Opcional: BetterTimeWarp, para tasas de warp por encima de 100 000×. Para llegar a Kraken hace falta un mod de viaje superlumínico.
+Opcional: BetterTimeWarp, para tasas de warp por encima de 100 000×. Para llegar a Kraken o a Elara hace falta un mod de viaje superlumínico.
 
 Es compatible con OPM: no toca ninguno de sus cuerpos. La primera carga es lenta porque Kopernicus construye su caché.
 
@@ -93,7 +99,8 @@ GameData/MundosLejanos/
                            Lunas y CinturonOscuro (generados); Parallax_Scatters y Parallax_PQS (generados)
     Norh/                  Norh y su Ciencia
     Skolta/                Skolta, Ceniza (generado) y su Ciencia
-    Termos/                Termos, sus lunas Tyrna y Karmen (Lunas, generado) y su Ciencia
+    Elara/                 Elara (estrella), Titanus (anillos, océano supercrítico) y su Ciencia
+    Termos/                Termos (en el sistema de Elara), sus lunas Tyrna y Karmen (Lunas, generado) y su Ciencia
     Talia/                 Talia y su Ciencia
     Akira/                 Akira y su Ciencia
     Visuales/              Scatterer, EVE y PlanetShine (generados, opcionales)
@@ -101,7 +108,7 @@ GameData/MundosLejanos/
   PluginData/<Cuerpo>/     texturas (en PluginData para que KSP no las precargue)
   PluginData/Terreno/      texturas de detalle de respaldo (sustituyen a CTTP si falta)
 herramientas/
-  sistema.py               parámetros de ambos sistemas: fuente única de verdad
+  sistema.py               parámetros de todos los sistemas: fuente única de verdad
   generar_atmosferas.py    curvas hidrostáticas, que inyecta en los .cfg
   generar_texturas.py      texturas provisionales
   generar_cuerpos_menores.py  configs de las lunas y del Cinturón Oscuro de Kraken
@@ -126,6 +133,7 @@ docs/
   skolta/DISENO.md         Skolta: cómo se llevó la ficha del equipo al juego
   termos/DISENO.md         Termos, Tyrna, Karmen y Talia: escala, decisiones y biomas
   akira/DISENO.md          Akira: escala, atmósfera y biomas
+  elara/DISENO.md          Elara y Titanus: física, anillos, balsas minerales y el traslado de Termos
   referencias_artista/     28 láminas y MundosLejanos_referencias.pdf, para el artista
 ```
 

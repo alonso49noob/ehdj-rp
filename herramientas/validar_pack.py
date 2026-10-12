@@ -214,8 +214,8 @@ def main():
                 errors.append(f"{where}: {tex} sin alfa: KSP lo lee como brillo 1 en todo el planeta (plástico)")
         if star:
             light = sv.node("Light")
-            if not light or abs(num(light.get("luminosity")) / S.KRAKEN_LUMINOSITY - 1) > 0.01:
-                errors.append(f"{where}: luminosity no coincide con sistema.KRAKEN_LUMINOSITY")
+            if not light or abs(num(light.get("luminosity")) / S.LUMINOSITY[name] - 1) > 0.01:
+                errors.append(f"{where}: luminosity no coincide con sistema.LUMINOSITY")
         pqs = b.node("PQS")
         if pqs:
             for k, v in pqs.node("Material").values if pqs.node("Material") else []:
@@ -228,7 +228,8 @@ def main():
             exp = HEIGHTMAPS[name]
             if (num(hm.get("offset")), num(hm.get("deformity"))) != (exp["offset"], exp["deformity"]):
                 errors.append(f"{where}: offset/deformity no coinciden con generar_texturas.HEIGHTMAPS")
-        allowed = {"Creus": [S.RING], "Kraken": list(S.KRAKEN_DISKS.values()), "Norh": [S.NORH_RING]}.get(name, [])
+        allowed = {"Creus": [S.RING], "Kraken": list(S.KRAKEN_DISKS.values()), "Norh": [S.NORH_RING],
+                   "Titanus": [S.TITANUS_RING]}.get(name, [])
         rings = b.node("Rings").all("Ring") if b.node("Rings") else []
         for ring in rings:
             check_texture(ring.get("texture"), where)

@@ -24,12 +24,12 @@ Para usar otra escala, se cambia en `sistema.py` (radio) y en `sistema.ATMOS["Te
 
 | Cuerpo | Órbita | Por qué |
 |---|---|---|
-| Termos | a = 33.5 Gm (2.46 KAU), e = 0.025, i = 6.5° | En el hueco entre Skolta (apoapsis 32.5 Gm) y Dres (periapsis 34.9 Gm). Su año dura 3.9 años de Kerbin |
+| Termos | Elara, a = 40.8 Gm (3 KAU), e = 0.025, i = 6.5° | Superviviente interior del sistema de Elara ([../elara/DISENO.md](../elara/DISENO.md)). Antes estaba entre Skolta y Dres (a = 33.5 Gm). Su año dura 6.2 años de Kerbin |
 | Talia | a = 53 Gm (3.9 KAU), e = 0.07, i = 9° | Cinturón exterior, más allá de Dres (apoapsis 46.8 Gm) y lejos de Jool |
 | Tyrna | a = 3 400 km de Termos, e = 0.015, i = 1.2° | Algo excéntrica: las mareas la calientan, de ahí el criovulcanismo. Periodo de 31.6 h, síncrona |
-| Karmen | a = 21 000 km de Termos, e = 0.18, i = 27° | "Mucho más allá de Tyrna", en una órbita de luna capturada. La SOI de Termos mide 53.6 Mm |
+| Karmen | a = 21 000 km de Termos, e = 0.18, i = 27° | "Mucho más allá de Tyrna", en una órbita de luna capturada. La SOI de Termos mide 75.3 Mm |
 
-En las fichas, Termos y Talia comparten el cinturón "entre Klann y Tempel" (Termos tiene el 60 % de la masa, Talia el 35 % y los asteroides y el polvo, el 5 %). En el pack, Termos está en el cinturón entre Skolta y Dres y Talia en el cinturón exterior, como se pidió. Los textos dicen que Termos reúne el 60 % de la masa de su cinturón y que Talia es el mayor cuerpo del exterior.
+En las fichas, Termos y Talia comparten el cinturón "entre Klann y Tempel" (Termos tiene el 60 % de la masa, Talia el 35 % y los asteroides y el polvo, el 5 %). En el pack, Termos estuvo primero en el cinturón entre Skolta y Dres; luego se trasladó al sistema de Elara, a 3 KAU, como el único superviviente de los mundos que se tragó Titanus. Talia sigue en el cinturón exterior de Kerbol y ahora es el mayor cuerpo de sus cinturones.
 
 ## Termos
 
@@ -59,7 +59,7 @@ En las fichas, Termos y Talia comparten el cinturón "entre Klann y Tempel" (Ter
 
 Sin oxígeno libre no hay óxido rojo: el hierro forma minerales grises y verdosos.
 
-**Vista desde el espacio.** El terreno se ve bajo un velo azulado de 5 atm (26 %), con nubes de vapor en un ~35 % del cielo: más en el ecuador, por los volcanes, y en los polos, más frescos y lluviosos. Los lagos son de un turquesa lechoso (`#4f9aa6`) y brillan cuando reflejan a Kerbol.
+**Vista desde el espacio.** El terreno se ve bajo un velo azulado de 5 atm (26 %), con nubes de vapor en un ~35 % del cielo: más en el ecuador, por los volcanes, y en los polos, más frescos y lluviosos. Los lagos son de un turquesa lechoso (`#4f9aa6`) y brillan cuando reflejan a Elara.
 
 ## Tyrna
 

@@ -1,11 +1,11 @@
 # Mundos Lejanos — versión de prueba (10-10-2026)
 
-Gracias por probarlo. Es un planet pack de Kopernicus con dos sistemas, dos planetas nuevos y tres planetas enanos:
-- **Creus–Halum**: un binario errante capturado a 800 KAU de Kerbol.
+Gracias por probarlo. Es un planet pack de Kopernicus con tres sistemas, dos planetas nuevos y dos planetas enanos en el de Kerbol:
+- **Creus–Halum**: un binario errante capturado a 880 KAU de Kerbol. Halum tiene continentes de hielo flotante.
 - **Kraken**: una enana marrón T2 a 0.2 años luz kerbales (~12 650 KAU).
 - **Norh**: un planeta nuevo del sistema de Kerbol, troyano de Jool (lo sigue 60° por detrás).
 - **Skolta**: un "Titán cálido" del sistema de Kerbol, entre Duna y Dres, con su luna Ceniza.
-- **Termos**: un planeta enano activo entre Skolta y Dres, con lagos casi hirviendo y dos lunas, Tyrna y Karmen.
+- **Elara**: una enana naranja K4 V a 0.3 años luz kerbales, con **Titanus** (12 masas jovianas, 21 g, anillos enormes y océano de agua supercrítica) y **Termos** (planeta enano activo con lagos casi hirviendo y dos lunas, Tyrna y Karmen).
 - **Talia**: un planeta enano lleno de cráteres en el cinturón exterior, entre Dres y Jool.
 - **Akira**: un mundo de hielo con atmósfera densa a 200 KAU de Kerbol.
 
@@ -26,7 +26,7 @@ Las texturas son **provisionales**: las pintará un artista más adelante.
 | EVE (Blackrack) + StockVolumetricClouds | Nubes volumétricas |
 | PlanetShine | Luz reflejada por los planetas |
 
-Usa una **partida nueva**: el pack añade 32 cuerpos. La primera carga es lenta porque Kopernicus crea su caché. Se probó **sin OPM**.
+Usa una **partida nueva**: el pack añade 34 cuerpos. La primera carga es lenta porque Kopernicus crea su caché. Se probó **sin OPM**.
 
 ## Ir rápido a cualquier sitio
 Menú de depuración: `Alt+F12` → Cheats → **Set Orbit**. Pon una nave en órbita del cuerpo que quieras probar.
@@ -38,6 +38,9 @@ Menú de depuración: `Alt+F12` → Cheats → **Set Orbit**. Pon una nave en ó
 - [ ] Los **polos** de Creus, Halum, Scarch, Tenebris y Vestigia ya no tienen cuñas de luz ni de sombra.
 - [ ] **En vuelo**, los planetas del sistema Kraken quedan iluminados por Kraken (luz rojiza) y no por Kerbol (luz blanca).
 - [ ] **Krax**: la Fundición (20° N, 60° O) tiene agujas metálicas de las máquinas (requiere Parallax).
+- [ ] **Halum**: los continentes de hielo blanco azulado alrededor de las islas se ven desde órbita, se puede aterrizar en ellos y el frente de hielo está rodeado de témpanos flotando (requiere Parallax).
+- [ ] **Elara** da luz naranja a Termos y Titanus (no la blanca de Kerbol); los anillos de Titanus se ven desde el Tracking Station.
+- [ ] **Titanus**: las balsas minerales flotan sobre el mar (no hundidas ni en el aire) en los biomas Balsas Minerales y Jardines Químicos (requiere Parallax).
 - [ ] **Scarch**: los Campos de Extracción tienen máquinas. Haz un experimento allí: los registros están **en inglés**.
 - [ ] **Tenebris**: frío y oscuro, 0.2 atm de metano y 0.29 g. Océanos helados y agua líquida solo en el ecuador, con respiraderos de metano en la costa. La órbita baja empieza por encima de 527 km. En 18° S 140° E están los restos de una máquina.
 - [ ] **Cuerpos menores con personalidad**:

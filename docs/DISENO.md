@@ -7,11 +7,11 @@ Las cifras de este documento salen de `herramientas/sistema.py`, que es la fuent
 
 | # | Decisión | Motivo |
 |---|---|---|
-| 1 | El sistema orbita a **800 KAU** de Kerbol (1.088 × 10¹³ m) | Con motores muy eficientes que queman por encima de la velocidad de escape se llega en un tiempo razonable. Su influencia gravitatoria apenas altera el resto del sistema de Kerbol |
+| 1 | El sistema orbita a **880 KAU** de Kerbol (1.197 × 10¹³ m; antes 800 KAU) | Con motores muy eficientes que queman por encima de la velocidad de escape se llega en un tiempo razonable. Su influencia gravitatoria apenas altera el resto del sistema de Kerbol |
 | 2 | Creus y Halum están separados **5 KAU** | Decisión del creador del concepto. Deja sitio para lunas futuras dentro de la SOI de Creus (12.3 KAU) |
 | 3 | El binario es **Halum orbitando a Creus** | Las cónicas por tramos son estables y los periodos salen correctos. Un baricentro invisible desfasaría los periodos con masas distintas |
 | 4 | Halum es el planeta azul de la imagen. El planeta rocoso era la referencia de escala (Kerbin) | No se usa para ningún cuerpo |
-| 5 | Ocrea se rediseñó como **luna de escarcha de hidrógeno** | La versión anterior copiaba la imagen de Kerbin. El concepto nuevo solo es posible a 800 KAU y enlaza con el hidrógeno y el neón de Halum |
+| 5 | Ocrea se rediseñó como **luna de escarcha de hidrógeno** | La versión anterior copiaba la imagen de Kerbin. El concepto nuevo solo es posible a 880 KAU y enlaza con el hidrógeno y el neón de Halum |
 
 1 KAU = semieje mayor de Kerbin = 13 599 840 256 m.
 
@@ -30,13 +30,13 @@ Lo hizo `docs/medicion_radios.png`, con perfil radial de brillo sobre `docs/refe
 
 | Cuerpo | Padre | Radio | g | Órbita | Plantilla | Notas |
 |---|---|---|---|---|---|---|
-| **Creus** | Kerbol | 2 100 km | 0.80 | a = 800 KAU, e = 0.03, i = 3.1° | Jool | Gigante de hielo. SOI de 12.3 KAU. Anillo oscuro de 1.485 a 1.715 R |
+| **Creus** | Kerbol | 2 100 km | 0.80 | a = 880 KAU, e = 0.03, i = 3.1° | Jool | Gigante de hielo. SOI de 13.5 KAU. Anillo oscuro de 1.485 a 1.715 R |
 | **Halum** | Creus | 690 km | 0.55 | a = 5 KAU, e = 0.04, i = 2.5° | Eve | Océano de neón, 7 atm, 32 K. Periodo de 2 058 años kerbales |
 | **Ocrea** | Creus | 380 km | 0.18 | a = 22 000 km, e = 0.05, **i = 152° (retrógrada)** | Vall | Capturada, en rotación síncrona. Escarcha de H₂, glaciares de neón y fumarolas, a ~6 K |
 | **Pastora** | Creus | 10 km | 0.03 | a = 3 700 km (justo fuera del anillo) | Gilly | Luna pastora. **SOI ampliada a 40 km** (la de Laplace sería de 13.8 km) |
 | **Prima** | Creus | 28 km | 0.012 | Órbita de Halum + 60° (L4) | Gilly | Troyano de tolinas |
 | **Secunda** | Creus | 18 km | 0.009 | Órbita de Halum − 60° (L5) | Gilly | Troyano de hielo de agua |
-| **Heraldo** | Kerbol | 5 km | 0.002 | rp = 4.2 KAU, ra = 800 KAU, i = 28° | Gilly | Cometa. Pasa por el perihelio en el año 4 de la partida |
+| **Heraldo** | Kerbol | 5 km | 0.002 | rp = 4.2 KAU, ra = 880 KAU, i = 28° | Gilly | Cometa. Pasa por el perihelio en el año 4 de la partida |
 
 El validador comprueba que ninguna SOI se solapa ni toca la atmósfera o el anillo de Creus.
 
@@ -46,7 +46,7 @@ El validador comprueba que ninguna SOI se solapa ni toca la atmósfera o el anil
 - El punto crítico del neón está en **44.4 K y unos 27 atm**. A 7 atm en superficie el océano es **líquido**.
 - El océano se vuelve **supercrítico a partir de unos 310 m de profundidad**: la presión del neón (1.21 t/m³ con 0.55 g) supera las 27 atm y, si el fondo está por encima de 44 K, la fase líquida desaparece. En el juego, el bioma *Abismo Supercrítico* marca las fosas.
 - **La superficie tiene que estar entre 29 y 36 K.** Por debajo de 29 K el H₂ se condensa a 7 atm, y por encima de 36 K el neón hierve. Se eligieron **32 K**.
-- **El calor viene de dentro.** A 800 KAU, Kerbol da unos 9 K de equilibrio (2 mW/m²). Halum necesita un flujo interno de **unos 0.07 W/m²**, parecido al de la Tierra (0.087).
+- **El calor viene de dentro.** A 880 KAU, Kerbol da unos 9 K de equilibrio (2 mW/m²). Halum necesita un flujo interno de **unos 0.07 W/m²**, parecido al de la Tierra (0.087).
 - **Las islas flotan.** El hielo de agua (0.93 g/cm³) es menos denso que el neón líquido (1.21), así que flota. El hielo de neón (1.44) se hunde.
 - **Las nubes son de hidrógeno.** Con una adiabática húmeda de κ ≈ 0.25, el H₂ se satura hacia 1.2 atm y 20.6 K. Las vetas blancas de la imagen son esas nubes.
 - **Atmósfera:** 92 % H₂ y 8 % Ne evaporado del océano, con M = 3.5 g/mol. γ = 1.62, porque a 32 K la rotación del H₂ está congelada.
@@ -79,7 +79,7 @@ El validador comprueba que ninguna SOI se solapa ni toca la atmósfera o el anil
 Las genera `herramientas/generar_atmosferas.py`:
 - Integra el equilibrio hidrostático con g(h) = g₀(R/(R+h))² sobre el perfil T(p).
 - Coloca 22 claves cada 0.75 de ln p, con tangentes dp/dh exactas.
-- Pone a cero las curvas de Sol y latitud, porque a 800 KAU la luz de Kerbol no calienta.
+- Pone a cero las curvas de Sol y latitud, porque a 880 KAU la luz de Kerbol no calienta.
 
 ## Jugabilidad
 
@@ -98,7 +98,7 @@ Las genera `herramientas/generar_atmosferas.py`:
 |---|---|
 | Islas a la deriva de hielo de agua | Bioma de Halum, mapa de altura y texto de ciencia sísmico |
 | Nubes de hidrógeno | Vetas de la textura de Halum, capa `Halum_Clouds` para EVE y textos de ciencia |
-| Biomas de Halum | Mar de Neón, Islas a la Deriva, Nieves de Hidrógeno, Abismo Supercrítico y Bajos Helados |
+| Biomas de Halum | Mar de Neón, Islas a la Deriva (islas, continentes de hielo flotante y la franja de témpanos frente a ellos), Nieves de Hidrógeno, Abismo Supercrítico y Bajos Helados |
 | Creus blanco por nubes de metano | Textura y descripción |
 | Anillo oscuro con luna pastora | Anillo, Pastora en su borde exterior y textos de ciencia |
 | Biomas de Creus por bandas | 5 bandas más la Gran Tormenta Blanca |

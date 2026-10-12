@@ -21,6 +21,7 @@ OUT = ROOT / "docs" / "referencias_artista"
 FONT = "C:/Windows/Fonts/arial.ttf"
 BOLD = "C:/Windows/Fonts/arialbd.ttf"
 KRAKEN_LIGHT = (1.0, 0.50, 0.66)
+ELARA_LIGHT = (1.0, 0.80, 0.62)   # sunlightColor de Elara (K4 V)
 BG, FG, DIM = (16, 17, 22), (232, 234, 240), (150, 155, 170)
 
 # cuerpo: (concepto en una línea, notas para el artista)
@@ -156,6 +157,11 @@ INFO["Tyrna"] = ("Luna helada de Termos: criovulcanismo y metales por toda la su
 INFO["Karmen"] = ("Luna-asteroide de Termos: fragmento del núcleo metálico de un cuerpo roto.", [
     "Metal oscuro #77726c → #4d4a46 (tipo M). RASGO: cara de fractura plana y pulida hacia 0° 90° E (#85827d con reflejos #a29f9a).",
     "La cara plana está en la altura (un plano a 0.82 R del centro): no redondearla. h = −1500 + gris × 3000."])
+INFO["Titanus"] = ("Sub-enana marrón de 12 M_J (21 g): nubes en bandas, océano de agua supercrítica, balsas minerales y anillos enormes.", [
+    "Color (vista lejana, solo nubes): bandas crema #f3e7cf / #e2c9a0 y cinturones pardos #c99f74 → #7a4a36, con óvalos de tormenta claros.",
+    "Surface (fondo del manto, bajo el mar): peridotita verdosa #55604f → #2c312b; dorsales de disolución con sales y sulfuros #e0d2a8 → #a8723c.",
+    "Biomas: balsas (16 %) en franjas de convergencia sobre las dorsales; Jardines Químicos (3.7 %) en parte de ellas. h = −9000 + gris × 8600.",
+    "Anillo (Titanus_Ring, u = 0 exterior): de 1.6 a 80 radios, roca parda #b9a891 dentro → hielo #d8dde2 fuera, huecos en 3.1, 7.5, 13, 21 y 34 R."])
 INFO["Talia"] = ("Planeta enano muerto y saturado de cráteres: el registro de impactos más antiguo del sistema, con metales.", [
     "Regolito gris pardo #a29b92 → #5b5752 según la altura. Cráteres de todos los tamaños, unos sobre otros.",
     "Gran Cuenca (22° S 110° E, 220 km): fondo de vidrio de impacto más oscuro y tres anillos de macizos rotos, algo más claros (#b4ada2).",
@@ -231,7 +237,8 @@ def sheet(body, num):
     d = ImageDraw.Draw(canvas)
     ref = S.BODIES[body]
     concept, notes = INFO[body]
-    system = {"Kraken": "Sistema Kraken", "Kerbol": "Sistema de Kerbol"}.get(ref["system"], "Sistema Creus–Halum")
+    system = {"Kraken": "Sistema Kraken", "Kerbol": "Sistema de Kerbol", "Elara": "Sistema Elara"}.get(ref["system"],
+                                                                                                    "Sistema Creus–Halum")
     d.text((40, 24), body, font=font(40, True), fill=FG)
     d.text((40 + d.textlength(body, font=font(40, True)) + 20, 40),
            f"{system} · R = {ref['radius'] / 1000:g} km · g = {ref['gee']:g} · plantilla {ref['template']}",
@@ -245,9 +252,9 @@ def sheet(body, num):
         d.text((60, 650), "Aspecto en el juego (shader de estrella)", font=font(15), fill=DIM)
     else:
         tex = load(body, "Color")
-        light = KRAKEN_LIGHT if ref["system"] == "Kraken" else (1.0, 1.0, 1.0)
-        for i, (lt, label) in enumerate((((1, 1, 1), "Luz neutra (colores reales)"),
-                                         (light, "Con la luz de Kraken" if ref["system"] == "Kraken" else "Con la luz de Kerbol"))):
+        star = {"Kraken": "Kraken", "Elara": "Elara"}.get(ref["system"], "Kerbol")
+        light = {"Kraken": KRAKEN_LIGHT, "Elara": ELARA_LIGHT}.get(star, (1.0, 1.0, 1.0))
+        for i, (lt, label) in enumerate((((1, 1, 1), "Luz neutra (colores reales)"), (light, f"Con la luz de {star}"))):
             im = sphere(tex, 165, spin=30 + 150 * i, light=lt)
             canvas.paste(im, (40 + i * 360, 150), im)
             d.text((60 + i * 360, 500), label, font=font(15), fill=DIM)

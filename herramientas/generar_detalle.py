@@ -26,10 +26,12 @@ SETS = {"Kerbin", "Mun", "Duna", "Gilly", "Eve", "Moho", "Ike", "Eeloo", "Minmus
 # Juego de texturas de Parallax por cuerpo (si no está aquí, el de su plantilla)
 TERRAIN_SET = {"Skolta": "Duna", "Norh": "Tylo", "Tenebris": "Moho", "Salus": "Laythe", "Scarch": "Duna",
                "Halum": "Eeloo", "Termos": "Laythe", "Ignea": "Moho", "Lumen": "Vall", "Secunda": "Eeloo",
-               "Fuligo": "Dres", "Caligo": "Dres", "Atra": "Dres", "Ceniza": "Mun", "Vestigia": "Mun", "Akira": "Eeloo"}
-OCEAN = {"Halum", "Norh", "Skolta", "Scarch", "Tenebris", "Salus", "Termos"}
+               "Fuligo": "Dres", "Caligo": "Dres", "Atra": "Dres", "Ceniza": "Mun", "Vestigia": "Mun", "Akira": "Eeloo",
+               "Titanus": "Moho"}
+OCEAN = {"Halum", "Norh", "Skolta", "Scarch", "Tenebris", "Salus", "Termos", "Titanus"}
 # Cuerpos con zonas que deben quedar planas (plataforma de la colonia, baliza): menos ruido de altura
-FLAT = {"Tenebris": 0.3, "Hollin": 0.3}
+# Halum: continentes de hielo flotante a +160 m que el ruido no debe hundir bajo el neón
+FLAT = {"Tenebris": 0.3, "Hollin": 0.3, "Halum": 0.4}
 
 
 def stock_blocks():
