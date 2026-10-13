@@ -129,15 +129,9 @@ PLAN = {
         ("Kerbin", "TinyIcebergs", "TempanosPequenos", (0.95, 1.00, 1.08), 1.0, ["Islas a la Deriva"], None, (-3500, -5)),
     ],
     # ---- Elara
-    # Titanus: balsas de espuma mineral flotando en el mar supercrítico (icebergs de Kerbin con el hielo teñido de
-    # roca: sales y sulfuros pardos y ocres); en los Jardines Químicos, costras de colores de las redes químicas vivas
+    # Titanus: formaciones propias (generar_modelos.py, en CUSTOM); aquí solo la espuma suelta entre ellas
     "Titanus": [
-        ("Kerbin", "GiantBerg", "BalsasGigantes", (0.62, 0.50, 0.38), 3.0, ["Balsas Minerales", "Jardines Quimicos"], None, (-9000, -5)),
-        ("Kerbin", "Icebergs", "Balsas", (0.70, 0.58, 0.42), 3.0, ["Balsas Minerales", "Jardines Quimicos"], None, (-9000, -5)),
-        ("Kerbin", "SmallIcebergs", "BalsasMedianas", (0.78, 0.66, 0.46), 2.0, ["Balsas Minerales"], None, (-9000, -5)),
-        ("Kerbin", "TinyIcebergs", "Espuma", (0.85, 0.80, 0.66), 1.5, ["Balsas Minerales", "Dorsales de Disolucion"], None, (-9000, -5)),
-        ("Kerbin", "SmallIcebergs", "JardinVerde", (0.35, 0.80, 0.50), 2.0, ["Jardines Quimicos"], None, (-9000, -5)),
-        ("Kerbin", "TinyIcebergs", "JardinNaranja", (1.10, 0.55, 0.20), 2.0, ["Jardines Quimicos"], None, (-9000, -5)),
+        ("Kerbin", "TinyIcebergs", "Espuma", (0.78, 0.66, 0.54), 1.5, ["Balsas Minerales", "Dorsales de Disolucion"], None, (-180000, -5)),
     ],
     "Ocrea": [  # lecho violeta, mantos de H2 plateados y glaciares de neón
         ("Mun", "SmallRocks", "RocasLecho", (0.62, 0.58, 0.80), 1.0, ["Lecho Desnudo", "Campos de Fumarolas"], None, None),
@@ -191,6 +185,69 @@ PLAN = {
         ("Dres", "MedRocksVar1", "BloquesCostra", (0.35, 0.22, 0.18), 1.0, ["Costra Enfriada"], None, None),
     ],
 }
+
+
+# Scatters con modelos propios (herramientas/generar_modelos.py). Se clona el iceberg gigante de Kerbin (shader
+# biplanar, LOD y optimizaciones) y se cambian modelo, textura, tinte, escala y reparto. Flotan: el origen del modelo
+# es la línea de flotación y Parallax lo pone a nivel del mar (placementAltitude 0) sobre fondos de −180 a −8 km.
+# (nombre, modelo, tinte RGB, spawnChance, escala mín–máx, alcance m, LOD1/LOD2 desde m, biomas, tiling)
+ROCA = f"{S.PACK}/PluginData/Titanus/Titanus_Roca.png"
+CUSTOM = {
+    "Titanus": [
+        ("ContinentesA", "continente_a", (0.80, 0.58, 0.44), 0.0007, (1.0, 2.2), 30000, (4000, 12000),
+         ["Balsas Minerales", "Jardines Quimicos"], 0.012),
+        ("ContinentesB", "continente_b", (0.62, 0.46, 0.40), 0.0007, (0.8, 1.8), 30000, (4000, 12000),
+         ["Balsas Minerales"], 0.012),
+        ("Montanas", "montana", (0.52, 0.38, 0.34), 0.0009, (0.7, 1.5), 30000, (3000, 10000),
+         ["Balsas Minerales", "Dorsales de Disolucion"], 0.015),
+        ("AgujasSilice", "agujas", (1.05, 1.00, 0.92), 0.003, (0.6, 1.6), 14000, (1500, 5000),
+         ["Balsas Minerales", "Dorsales de Disolucion", "Jardines Quimicos"], 0.03),
+        ("ChimeneasMinerales", "chimeneas", (0.72, 0.62, 0.56), 0.0025, (0.6, 1.4), 12000, (1500, 5000),
+         ["Dorsales de Disolucion", "Balsas Minerales"], 0.03),
+        ("ChimeneasVivas", "chimeneas", (0.40, 0.92, 0.55), 0.005, (0.6, 1.5), 12000, (1500, 5000),
+         ["Jardines Quimicos"], 0.03),
+        ("ChimeneasNaranja", "chimeneas", (1.15, 0.58, 0.22), 0.004, (0.5, 1.2), 12000, (1500, 5000),
+         ["Jardines Quimicos"], 0.03),
+        ("BalsasEspuma", "balsa", (0.85, 0.74, 0.62), 0.01, (0.5, 1.6), 9000, (1000, 3500),
+         ["Balsas Minerales", "Jardines Quimicos", "Mar Supercritico"], 0.03),
+    ],
+}
+
+
+def custom_scatter(body, name, model, rgb, chance, scale, rng, lods, only, tiling):
+    sc = stock_scatter("Kerbin", "GiantBerg")
+    sc.set("name", f"{body}{name}")
+    sc.set("model", f"{S.PACK}/Modelos/{body}/{model}0")
+    opt = sc.node("Optimizations")
+    opt.set("frustumCullingStartRange", str(min(rng, 12000)))
+    opt.set("frustumCullingScreenMargin", str(-int(rng * 0.6)))       # objetos de kilómetros: no recortarlos antes de tiempo
+    mat = sc.node("Material")
+    mat.set("_MainTex", ROCA)
+    mat.set("_Tiling", str(tiling))
+    mat.set("_Color", tint("1,1,1,1", rgb))
+    for k, v in (("_SpecularIntensity", "0.25"), ("_SpecularPower", "8"), ("_FresnelPower", "5"),
+                 ("_EnvironmentMapFactor", "0.25"), ("_Hapke", "0.8")):   # roca porosa y mate, no hielo
+        mat.set(k, v)
+    dist = sc.node("Distribution")
+    dist.set("seed", f"{(sum(map(ord, name)) % 997) / 997:.4f}")
+    dist.set("spawnChance", f"{chance:g}")
+    dist.set("range", str(rng))
+    dist.set("minScale", ",".join([f"{scale[0]:g}"] * 3))
+    dist.set("maxScale", ",".join([f"{scale[1]:g}"] * 3))
+    dist.set("minAltitude", "-180000")
+    dist.set("maxAltitude", "-5")
+    dist.set("placementAltitude", "0")
+    for lod, (node, start) in enumerate(zip(dist.node("LODs").nodes("LOD"), lods), start=1):
+        node.set("model", f"{S.PACK}/Modelos/{body}/{model}{lod}")
+        node.set("range", str(start))
+    names = list(BIOMES[body])
+    dist.remove_node("BiomeBlacklist")
+    bl = Node("BiomeBlacklist")
+    for n in names:
+        if n not in only:
+            bl.items.append(("v", "name", n))
+    dist.items.append(("n", bl))
+    return sc
 
 
 # ------------------------------------------------------------------ ConfigNode mínimo con orden
@@ -329,14 +386,17 @@ def build():
                     bl.items.append(("v", "name", n))
                 dist.items.append(("n", bl))
             b.items.append(("n", sc))
+        for spec in CUSTOM.get(body, []):
+            b.items.append(("n", custom_scatter(body, *spec)))
         root.items.append(("n", b))
     write_pqs_patch()
     header = ["// GENERADO por herramientas/generar_scatters.py — no editar a mano.",
               "// Requiere Parallax Continued + Parallax_StockScatterTextures (modelos y texturas).",
-              "// Máquinas = agujas/racimos metálicos de Moho, solo en los biomas de las máquinas."]
+              "// Máquinas = agujas/racimos metálicos de Moho, solo en los biomas de las máquinas.",
+              "// Titanus: modelos propios en MundosLejanos/Modelos/Titanus (generar_modelos.py)."]
     OUT.write_text("\n".join(header + root.dump()) + "\n", encoding="utf-8")
-    n = sum(len(p) for p in PLAN.values())
-    print(f"{OUT.relative_to(ROOT)}: {len(PLAN)} cuerpos, {n} scatters")
+    n = sum(len(p) for p in PLAN.values()) + sum(len(c) for c in CUSTOM.values())
+    print(f"{OUT.relative_to(ROOT)}: {len(PLAN)} cuerpos, {n} scatters ({sum(len(c) for c in CUSTOM.values())} con modelos propios)")
 
 
 if __name__ == "__main__":

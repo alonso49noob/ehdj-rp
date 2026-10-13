@@ -36,7 +36,9 @@ SRC = ROOT / "GameData" / S.PACK
 OUT = ROOT / "build" / "GameData" / S.PACK
 KSP = pathlib.Path(r"C:/Program Files (x86)/Steam/steamapps/common/Kerbal Space Program/GameData")
 GPU_KEYS = {"texture", "normals", "sunspotTex", "noiseMap", "rampMap",
-            "lowTex", "midTex", "highTex", "steepTex", "lowBumpMap", "midBumpMap", "highBumpMap", "steepBumpMap"}
+            "lowTex", "midTex", "highTex", "steepTex", "lowBumpMap", "midBumpMap", "highBumpMap", "steepBumpMap",
+            "_MainTex"}                                  # _MainTex: textura de los scatters propios de Parallax
+KEEP_PNG = ("/Destello/",)                           # destellos de Scatterer: degradados suaves que DXT1 rompería
 CPU_KEYS = {"map"}                                   # VertexHeightMap y VertexColorMap
 REF = re.compile(r"^\s*@?(\w+)\s*=\s*(" + re.escape(S.PACK) + r"/\S+?\.png)\b", re.M)
 
@@ -92,7 +94,8 @@ def encode_dds(src, dst, mips=True):
 
 def build():
     refs = references()
-    convert = {path for path, keys in refs.items() if keys <= GPU_KEYS | CPU_KEYS}   # biomas: PNG
+    convert = {path for path, keys in refs.items() if keys <= GPU_KEYS | CPU_KEYS   # biomas: PNG
+               and not any(k in path for k in KEEP_PNG)}
     # Alturas: a R16 solo las de 16 bits (las de 8 bits ganan tamaño sin ganar precisión: se quedan en PNG)
     convert = {p for p in convert
                if not p.endswith("_Height.png") or Image.open(SRC.parent / p).mode.startswith("I")}

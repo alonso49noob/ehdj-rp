@@ -37,7 +37,7 @@ Consecuencias de juego: velocidad orbital en la superficie de 38.5 km/s y de esc
 
 - **Aire:** 78 % H₂, 12 % He, 10 % H₂O (M = 3.85 g/mol), γ = 1.38. 218 atm y 700 K al nivel del mar; adiabática húmeda (κ = 0.2) hasta 160 K en la cima de las nubes. Con 21 g la atmósfera se aplasta: techo a ~70 km (`generar_atmosferas.py`). Densidad al nivel del mar: 14.6 kg/m³.
 - **Océano:** el punto crítico del agua es 647 K y 218 atm, así que a 700 K el "mar" es **agua supercrítica**: ni líquido ni vapor. Su densidad en la superficie ronda 0.15 g/cm³ y crece rápido con la profundidad (con 21 g, cada 100 m suman ~30 atm). En el juego, `density = 0.2`: la mayoría de las naves se hunden.
-- **Fondo:** todo el manto está bajo el mar, de −8 950 m (fosas) a −900 m (dorsales). Detalle_PQS añade colinas de hasta 400 m, así que el techo se dejó en −900 m para que nada asome.
+- **Fondo:** todo el manto está bajo el mar, de **−179 km** (fosas) a **−18 km** (dorsales): 20 veces más hondo que en la primera versión. El relieve se calcula en la escala original y se multiplica por `TITANUS_PROF = 20` al guardar la altura (`offset = −180 000`, `deformity = 172 000`; 2.6 m por nivel de gris en 16 bits). Los umbrales de biomas siguen en la escala original.
 
 ### Balsas minerales y vida
 
@@ -45,9 +45,31 @@ El agua supercrítica es un disolvente muy agresivo: se come la roca del manto, 
 
 En los poros de algunas balsas (bioma **Jardines Químicos**) crecen redes de compuestos de silicio y azufre que catalizan su propia formación con el hidrógeno y los minerales disueltos: crecen, se parten y cada trozo sigue creciendo. A 700 K no puede haber química de proteínas ni de ADN; lo más plausible es algo así, química autocatalítica en superficies minerales. Los textos de ciencia no lo llaman vida: dejan la pregunta abierta.
 
-**Scatters de Parallax** (`generar_scatters.py`): los icebergs del mar frío de Kerbin (`GiantBerg`, `Icebergs`, `SmallIcebergs`, `TinyIcebergs`) con el hielo teñido de pardo y ocre. Parallax los coloca **a nivel del mar** (`placementAltitude`) sobre cualquier fondo de altitud negativa, así que flotan aunque el fondo esté a 9 km. En los Jardines Químicos se añaden versiones verdes y naranjas. Con `collisionLevel = 4` se puede aterrizar en ellas.
+**Scatters de Parallax con modelos propios** (`generar_modelos.py` → `Modelos/Titanus/*.mu`, 6 formaciones × 3 LOD). Los modelos `.mu` se escriben con `herramientas/mu.py`, que reproduce la estructura mínima de los modelos de Parallax_StockScatterTextures (una sola malla: vértices, UV, normales, tangentes y triángulos; Parallax pone el material). El origen de cada modelo es la línea de flotación: Parallax los coloca **a nivel del mar** (`placementAltitude = 0`) sobre cualquier fondo de −180 a −8 km, así que flotan.
 
-> No se hizo un modelo propio: los scatters de Parallax son modelos `.mu`, y para crearlos hace falta Blender con el complemento io_object_mu o Unity con PartTools, que no están instalados.
+| Formación | Tamaño (escala 1) | Geología |
+|---|---|---|
+| `continente_a`, `continente_b` | ~3.3 km, de −340 a +590 m | Meseta en terrazas de estratos (escalones de 45 m), siete mesetas testigo de paredes verticales, crestas de minerales cristalizados, acantilado con muesca de oleaje a ras de agua y agujas sueltas |
+| `montana` | ~1.6 km, hasta +680 m | Pico con cárcavas radiales y estratos de 22 m, rodeado de órganos de columnas hexagonales (por contracción, como las de basalto) |
+| `agujas` | ~350 m, hasta +490 m | Racimo de cristales de sílice hexagonales, inclinados y con punta piramidal, sobre una base de espuma |
+| `chimeneas` | ~350 m, hasta +240 m | Tubos huecos de precipitación química con la boca acampanada (como los jardines químicos o las fumarolas negras) |
+| `balsa` | ~250 m, hasta +20 m | Balsa pequeña de espuma, para rellenar entre las grandes |
+
+Con 21 g nada alto se sostiene sin una raíz ancha: los continentes y la montaña son achaparrados y macizos; las agujas y los tubos son finos porque son cristales y paredes huecas.
+
+| Scatter | Modelo | Biomas | Tinte |
+|---|---|---|---|
+| ContinentesA / B | `continente_a` / `_b` | Balsas Minerales (A también en Jardines) | ocre y óxido |
+| Montanas | `montana` | Balsas Minerales, Dorsales | óxido oscuro |
+| AgujasSilice | `agujas` | Balsas, Dorsales, Jardines | sílice pálida |
+| ChimeneasMinerales | `chimeneas` | Dorsales, Balsas | gris pardo |
+| ChimeneasVivas / Naranja | `chimeneas` | Jardines Químicos | verde y naranja (las redes químicas) |
+| BalsasEspuma | `balsa` | Balsas, Jardines y algo de Mar Supercrítico | crema |
+| Espuma | iceberg pequeño de Kerbin | Balsas, Dorsales | crema |
+
+Material: el shader biplanar de los icebergs de Kerbin con una textura propia (`PluginData/Titanus/Titanus_Roca.png`: estratos ondulados, vetas de sales y costras de sulfuros; `construir.py` la pasa a DDS) y la normal de los icebergs; roca mate (`_SpecularIntensity = 0.25`). `collisionLevel = 4`: se puede aterrizar en ellas.
+
+> **Por probar en el juego.** Parallax reparte los scatters sobre los quads del terreno. Con el fondo a 18–179 km, no está comprobado que los quads del fondo lleguen al nivel de detalle en el que Parallax los procesa. Si las formaciones no aparecen, hay dos salidas: subir el fondo bajo los biomas de balsas (por ejemplo, dorsales a −2 km) o reducir la profundidad.
 
 ### Biomas
 
@@ -65,7 +87,35 @@ Un solo anillo de Kopernicus de **1.6 a 80 radios** (11 500–576 000 km, como J
 
 ### Aspecto desde el espacio
 
-218 atm de hidrógeno con nubes de agua: no se ve el océano. La textura lejana son bandas crema y pardas con óvalos de tormenta claros, como un Júpiter más cálido. Scatterer: cielo pardo anaranjado y muy brumoso.
+218 atm de hidrógeno con nubes de agua: no se ve el océano. Sobre el dibujo de bandas de la primera versión (que se conserva como base, con un 15 % de peso) se aplica una gradación amenazante: zonas crema enfermizas, cinturones de óxido y sangre seca y un negro amoratado, con filamentos de turbulencia entre las bandas.
+
+- **El Ojo** (22° S, 70° E): un ciclón oscuro de ~6 000 × 2 400 km, más ancho que Kerbin, con tres brazos en espiral logarítmica, el centro casi negro y la pared encendida de azufre.
+- Nueve tormentas oscuras menores y los óvalos claros de antes.
+- Limbo rojo sangre que se apaga en negro (`Gradient` y `rimBlend`), anillos más oscuros y rojizos.
+- **Scatterer:** cielo rojo herrumbre, muy brumoso (`mie` 0.05).
+
+### Nubes volumétricas (EVE, V5)
+
+Dos capas separadas por un hueco, para dar escala y profundidad: se ve la cubierta baja entre las torres.
+
+| Capa | Altura | Cobertura | Densidad |
+|---|---|---|---|
+| `Titanus-nubes` | 9–24 km | `Titanus_Clouds.png`: las zonas claras de las bandas | ×3 la del resto del pack |
+| `Titanus-tormentas` | 26–44 km | `Titanus_Tormentas.png`: bordes de los cinturones (cizalla), tormentas y brazos de El Ojo | ×1.5 |
+
+La vista lejana no se cambia con EVE (`swap = False`): las bandas horneadas hacen de capa profunda bajo las volumétricas.
+
+## Destello de Elara (Scatterer)
+
+Texturas propias, en PNG (`PluginData/Elara/Destello/`, `construir.py` no las comprime: DXT1 rompería los degradados), generadas por `generar_visuales.destello_texturas()`:
+
+- **Núcleo:** disco saturado blanco que vira a naranja, resplandor 1/r² y corona ciliar (las «pestañas» finas de la lente).
+- **Estallido:** 6 picos de difracción (diafragma hexagonal) con bandas irisadas, 6 secundarios y 260 rayos finos de longitud y color variables.
+- **Raya anamórfica:** horizontal, cálida en el centro y cian en los extremos.
+- **Halo:** anillo de 22° con dispersión (rojo fuera, azul dentro) y otro más tenue.
+- **14 fantasmas** a lo largo de la línea estrella–centro de pantalla: hexágonos del diafragma con borde brillante y franja cromática, anillos irisados y discos ámbar, de distintos tamaños y a ambos lados de la estrella.
+
+Las curvas de escala e intensidad van por distancia a la estrella y son planas en un margen amplio, así que Termos y Titanus quedan dentro tanto si Scatterer mide en radios de la estrella como en Gm.
 
 ## Archivos
 
@@ -76,4 +126,7 @@ Un solo anillo de Kopernicus de **1.6 a 80 radios** (11 500–576 000 km, como J
 | `Configs/Elara/Ciencia.cfg` | Textos de ciencia de Elara y Titanus |
 | `Configs/Termos/*` | Termos y sus lunas (ahora con `referenceBody = Elara`) |
 | `herramientas/sistema.py` | Órbitas, masas, luz (`LUMINOSITY`), anillos (`TITANUS_RING`) y atmósfera |
-| `herramientas/generar_texturas.py` | `titanus()`: altura, color, biomas, nubes y anillo |
+| `herramientas/generar_texturas.py` | `titanus()`: altura, color, biomas, nubes (`Clouds`, `Tormentas`) y anillo |
+| `herramientas/generar_modelos.py`, `herramientas/mu.py` | Modelos procedurales de los scatters y escritor/lector de `.mu` |
+| `Modelos/Titanus/*.mu`, `PluginData/Titanus/Titanus_Roca.png` | Los 18 modelos (6 × 3 LOD) y su textura |
+| `PluginData/Elara/Destello/*.png` | Texturas del destello de Elara |

@@ -46,8 +46,10 @@ Un "Titán cálido" del tamaño de Kerbin, en una órbita inclinada 19°:
 Una enana naranja K4 V (4 600 K, 0.70 masas de Kerbol) cuyo sistema casi vació un gigante:
 - **Titanus**, una sub-enana marrón de 12 masas jovianas y 1.2 radios de Jool, a 6.5 KAU, que se tragó casi todo lo que orbitaba Elara:
   - un sistema de anillos inmenso, de 1.6 a 80 radios (576 000 km);
-  - 21 g, 218 atm y 700 K: un océano de agua supercrítica que disuelve el manto;
-  - balsas flotantes de espuma mineral (Parallax) y, en algunas, redes químicas de colores que quizá estén vivas.
+  - 21 g, 218 atm y 700 K: un océano de agua supercrítica de 18 a 179 km de profundidad que disuelve el manto;
+  - continentes y montañas flotantes de espuma mineral, agujas de cristal y chimeneas químicas (modelos propios de Parallax) y, en algunas, redes químicas de colores que quizá estén vivas;
+  - nubes en bandas de óxido y sangre seca, El Ojo (un ciclón oscuro más ancho que Kerbin) y nubes volumétricas en dos capas (EVE).
+- Elara tiene un destello propio en Scatterer: picos de difracción irisados, raya anamórfica, halo y fantasmas hexagonales.
 - **Termos**, el superviviente interior, a 3 KAU. Es un planeta enano muy activo:
   - 5 atm de nitrógeno, CO₂, vapor y amoníaco, a más de 100 °C;
   - lagos inmensos de agua lechosa casi hirviendo (a 5 atm hierve a 152 °C), con terrazas blancas de sílice;
@@ -100,6 +102,7 @@ GameData/MundosLejanos/
     Norh/                  Norh y su Ciencia
     Skolta/                Skolta, Ceniza (generado) y su Ciencia
     Elara/                 Elara (estrella), Titanus (anillos, océano supercrítico) y su Ciencia
+  Modelos/Titanus/         modelos .mu de los scatters de Titanus (generados, fuera de PluginData para que KSP los cargue)
     Termos/                Termos (en el sistema de Elara), sus lunas Tyrna y Karmen (Lunas, generado) y su Ciencia
     Talia/                 Talia y su Ciencia
     Akira/                 Akira y su Ciencia
@@ -113,9 +116,10 @@ herramientas/
   generar_texturas.py      texturas provisionales
   generar_cuerpos_menores.py  configs de las lunas y del Cinturón Oscuro de Kraken
   generar_scatters.py      scatters de Parallax y su PQSMod
+  generar_modelos.py       modelos .mu procedurales de los scatters de Titanus (con mu.py, escritor de .mu)
   generar_detalle.py       terreno de Parallax y relieve/color a ras de suelo (PQSMods de ruido)
   compilar_plugin.py       compila plugin/*.cs -> Plugins/MundosLejanos.dll (coma y colas de cometas)
-  generar_visuales.py      configs de Scatterer, EVE y PlanetShine, y texturas de EVE
+  generar_visuales.py      configs de Scatterer, EVE y PlanetShine, texturas de EVE y destello de Elara
   generar_referencias.py   láminas de referencia para el artista (PNG + PDF)
   previsualizar.py         vistas previas de docs/
   generar_terreno.py       texturas de detalle de respaldo y su parche, para cuando falta CTTP

@@ -35,7 +35,7 @@ HEIGHTMAPS = {
     "Karmen":   dict(offset=-1500, deformity=3000),
     "Talia":    dict(offset=-5500, deformity=11000),     # Gran Cuenca −4.5 km … anillos y tierras altas
     "Akira":    dict(offset=-3000, deformity=9000),      # Glaciar de Celdas −2.3 km … montañas de hielo y criovolcanes
-    "Titanus":  dict(offset=-9000, deformity=8600),      # todo bajo el mar supercrítico: fosas −8.9 km … dorsales −900 m
+    "Titanus":  dict(offset=-180000, deformity=172000),  # todo bajo el mar supercrítico: fosas −179 km … dorsales −18 km
     # sistema Kraken
     "Krax":     dict(offset=-1800, deformity=3600),
     "Scarch":   dict(offset=-4000, deformity=9000),
@@ -471,6 +471,11 @@ def halum():
 
 
 # ------------------------------------------------------------------ Titanus (sistema de Elara)
+TITANUS_PROF = 20.0                                   # el relieve del fondo se multiplica por esto (océano 20× más hondo)
+EYE_C = np.array([np.cos(np.radians(-22)) * np.cos(np.radians(70)), np.cos(np.radians(-22)) * np.sin(np.radians(70)),
+                  np.sin(np.radians(-22))], np.float32)    # El Ojo: 22° S, 70° E
+
+
 def titanus():
     """Sub-enana marrón de 12 masas jovianas con océano de agua supercrítica (218 atm, 700 K) y anillos inmensos.
 
@@ -486,7 +491,9 @@ def titanus():
     ridge = fbm(n, P, (2.4, 2.4, 2.4), 6, ridged=True)
     h = -6200 + 2600 * base + 4200 * smooth(0.55, 0.9, ridge) + 250 * fbm(n, P, (30, 30, 30), 3)
     h = np.clip(h, -8950, -900)                    # Detalle_PQS añade colinas de hasta 400 m: que no asomen
-    save(encode_height(h, "Titanus"), "Titanus", "Height")
+    # Océano 20 veces más hondo que en la primera versión: el relieve se calcula en la escala original (los umbrales
+    # de biomas y colores siguen en esas unidades) y se multiplica al guardar: dorsales a −18 km, fosas a −179 km
+    save(encode_height(h * TITANUS_PROF, "Titanus"), "Titanus", "Height")
 
     P2, LAT2, LON2 = grid(W // 2, H // 2)
     h2 = downsample(h, 2)
@@ -517,9 +524,45 @@ def titanus():
             d = np.hypot(u / rng.uniform(0.05, 0.11), v / 0.035)
             storms = np.maximum(storms, np.where(X @ c > 0, smooth(1.0, 0.6, d), 0))
     field = field + 0.9 * storms
-    color = ramp(field, ["#f3e7cf", "#e2c9a0", "#c99f74", "#a5704f", "#7a4a36"])
+    base = ramp(field, ["#f3e7cf", "#e2c9a0", "#c99f74", "#a5704f", "#7a4a36"])   # la textura de la primera versión
+
+    # Aspecto amenazante sobre esa base: el mismo dibujo de bandas, regradado hacia óxido, sangre seca y un negro
+    # amoratado en los cinturones, con filamentos finos de turbulencia y El Ojo, un ciclón oscuro gigante
+    fil = fbm(Perlin(4804), P2, (6.0, 6.0, 40.0), 5)                      # filamentos estirados entre bandas
+    u, v = tangent_uv(X, EYE_C, 1.0)
+    rr = np.hypot(u / 0.42, v / 0.17)                                     # óvalo de ~6 000 × 2 400 km
+    ang = np.arctan2(v / 0.13, u / 0.30)
+    arms = 0.5 + 0.5 * np.cos(3 * ang - 7.0 * np.log(rr + 0.05))           # tres brazos en espiral logarítmica
+    front = X @ EYE_C > 0
+    eye_in = np.where(front, smooth(1.6, 0.25, rr), 0.0)                  # 1 en el centro, 0 fuera de los brazos
+    core = np.where(front, smooth(0.26, 0.14, rr), 0.0)                   # el ojo: un pozo casi negro
+    rim = np.where(front, np.exp(-((rr - 0.28) / 0.05) ** 2), 0.0)        # pared del ojo, encendida de azufre
+    f2 = field + 0.6 * fil - 1.4 * eye_in * (0.45 + 0.55 * arms)
+    menace = ramp(f2, ["#dcc292", "#a8784c", "#6e3324", "#45161a", "#230b14", "#120610"])
+    color = 0.15 * base + 0.85 * menace
+    color = color * (1 - core[..., None]) + hexrgb("#07040a") * core[..., None]
+    color = color * (1 - 0.8 * rim[..., None]) + hexrgb("#f0c860") * 0.8 * rim[..., None]
+    for _ in range(9):                                                    # tormentas oscuras menores
+        c = random_unit(rng)
+        if abs(c[2]) < 0.8:
+            du, dv = tangent_uv(X, c, 1.0)
+            d = np.hypot(du / rng.uniform(0.03, 0.07), dv / 0.022)
+            k = np.where(X @ c > 0, smooth(1.0, 0.3, d), 0.0)[..., None]
+            color = color * (1 - 0.75 * k) + hexrgb("#1c0a10") * 0.75 * k
     save(color, "Titanus", "Color", gloss=0.0)
-    save(normal_map(downsample(field, 2) * 3000.0, S.BODIES["Titanus"]["radius"], 1.0, detail=0.15), "Titanus", "Normal")
+    relief = field + 0.35 * fil - 1.6 * eye_in * (0.4 + 0.6 * arms)
+    save(normal_map(downsample(relief, 2) * 3500.0, S.BODIES["Titanus"]["radius"], 1.0, detail=0.15), "Titanus", "Normal")
+
+    # Nubes para EVE (volumétricas V5): cubierta baja en las zonas claras y torres de tormenta en los bordes de los
+    # cinturones, en las tormentas y en los brazos de El Ojo
+    deck = np.clip((f2 - np.quantile(f2, 0.35)) / (np.quantile(f2, 0.9) - np.quantile(f2, 0.35)), 0, 1)
+    shear = np.abs(np.gradient(belts, axis=0)) / np.abs(np.gradient(belts, axis=0)).max()
+    towers = np.clip(1.4 * shear * smooth(0.0, 0.5, fil) + 0.9 * storms + 0.8 * eye_in * arms * (1 - core), 0, 1)
+    for name, cov, rgb in (("Clouds", deck, "#d9c3a0"), ("Tormentas", towers, "#b48a68")):
+        rgba = np.zeros(cov.shape + (4,), np.uint8)
+        rgba[..., :3] = hexrgb(rgb).astype(np.uint8)
+        rgba[..., 3] = (cov * 255).astype(np.uint8)
+        save(Image.fromarray(rgba, "RGBA"), "Titanus", name)
 
     names = list(BIOMES["Titanus"])
     fosas = h2 < wquantile(h2, 0.10, np.cos(np.radians(LAT2)))           # el 10 % más hondo
@@ -536,7 +579,7 @@ def titanus():
         a *= 1 - depth * np.exp(-((lr - np.log(c)) / w) ** 2)             # huecos (resonancias, lunas que se tragó)
     a *= 0.75 + 0.25 * np.sin(lr * 140) * np.sin(lr * 57 + 1)              # anillos finos
     tint = np.clip((np.log(r) - np.log(1.6)) / (np.log(80) - np.log(1.6)), 0, 1)
-    rgb = hexrgb("#b9a891")[None] * (1 - tint[:, None]) + hexrgb("#d8dde2")[None] * tint[:, None]   # roca dentro, hielo fuera
+    rgb = hexrgb("#8a6f5e")[None] * (1 - tint[:, None]) + hexrgb("#b9b4b4")[None] * tint[:, None]   # roca rojiza dentro, hielo sucio fuera
     ring = np.zeros((8, 4096, 4), np.uint8)
     ring[..., :3] = rgb.astype(np.uint8)
     ring[..., 3] = (np.clip(a, 0, 1) * 255).astype(np.uint8)

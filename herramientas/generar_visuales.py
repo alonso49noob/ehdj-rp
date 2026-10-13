@@ -46,8 +46,8 @@ SCATTERER = {
     "Termos": dict(sun="Elara", flat=True, load=3e8, unload=5e8, start=1, HR=4.5, HM=1.5,
                    betaR=(0.0160, 0.0300, 0.0560), mie=0.0200, mieG=0.80, ozone=False, eclipse=["Tyrna"]),
     # Titanus: 218 atm de H2 con nubes de agua: cielo pardo anaranjado y muy brumoso. Con 21 g la atmósfera mide 53 km
-    "Titanus": dict(sun="Elara", flat=True, load=8e8, unload=1.5e9, start=1, HR=6, HM=2,
-                    betaR=(0.0300, 0.0200, 0.0120), mie=0.0350, mieG=0.80, ozone=False, eclipse=[]),
+    "Titanus": dict(sun="Elara", flat=True, load=8e8, unload=1.5e9, start=1, HR=6, HM=3,   # rojo herrumbre, opresivo
+                    betaR=(0.0420, 0.0150, 0.0060), mie=0.0500, mieG=0.86, ozone=False, eclipse=[]),
     # Akira: 1.2 atm de N2 a 62 K con bruma de metano: cielo azul oscuro, como el de Plutón
     "Akira": dict(sun="Sun", flat=True, load=3e8, unload=5e8, start=1, HR=12, HM=4,
                   betaR=(0.0060, 0.0130, 0.0300), mie=0.0080, mieG=0.75, ozone=False, eclipse=[]),
@@ -82,6 +82,15 @@ EVE = {
     "Skolta": dict(alt=3000, lo=3000, hi=10000, color=(222, 206, 180), fade=(140000, 190000), swap=False,
                    cover=0.35),    # nubes de NH3 crema (menos que el 60 % inicial: tapaban el contraste mar/tierra)
     "Termos": dict(alt=2500, lo=2500, hi=7000, color=(238, 238, 234), fade=(70000, 100000), swap=True),   # vapor
+    # Titanus: cubierta baja de nubes de agua, espesa y parda (la vista lejana sigue siendo la de bandas: swap=False)
+    "Titanus": dict(alt=9000, lo=9000, hi=24000, color=(200, 158, 124), fade=(900000, 1200000), swap=False, dens=3.0),
+}
+# Capas volumétricas extra (mismo cuerpo, otra altura y otro mapa de cobertura): en Titanus, torres de tormenta
+# de 26 a 44 km sobre los bordes de los cinturones, las tormentas y los brazos de El Ojo (Titanus_Tormentas.png).
+# Dos capas separadas por un hueco dan la sensación de profundidad: se ve la cubierta baja entre las torres.
+EVE_EXTRA = {
+    "Titanus": dict(nombre="tormentas", src="Tormentas", alt=26000, lo=26000, hi=44000, color=(150, 100, 80),
+                    fade=(900000, 1200000), dens=1.5),
 }
 OCEAN_SCALED = {"Halum": "#6b94cc", "Salus": "#24484a", "Termos": "#4f9aa6"}   # color del mar visto desde órbita
 
@@ -109,7 +118,7 @@ def height(body, shape):
 def coverage(body):
     """Cobertura de nubes 0..1 (2048×1024) reconstruida de las texturas del pack."""
     col = img(body, "Color")
-    if body in ("Halum", "Termos"):   # capa de nubes propia de generar_texturas
+    if body in ("Halum", "Termos", "Titanus"):   # capa de nubes propia de generar_texturas
         cov = img(body, "Clouds", "RGBA")[..., 3] / 255
     elif body == "Salus":
         surf = img(body, "Surface")
@@ -166,12 +175,25 @@ def eve_textures(body, cfg):
         Image.fromarray(rgba, "RGBA").save(GD_TEX / body / f"{body}_ScaledEVE.png", optimize=True)
 
 
-def eve_object(body, cfg):
+def eve_extra_textures(body, cfg):
+    """Cobertura y capa 2D de una capa extra a partir de <Cuerpo>_<src>.png (alfa = cobertura)."""
+    a = img(body, cfg["src"], "RGBA")[..., 3] / 255
+    cov = np.asarray(Image.fromarray((a * 255).astype(np.uint8), "L").filter(ImageFilter.GaussianBlur(2)), np.float32) / 255
+    suf = cfg["src"]
+    Image.fromarray((cov * 255).astype(np.uint8), "L").save(GD_TEX / body / f"{body}_EVECoverage{suf}.png", optimize=True)
+    rgba = np.zeros(cov.shape + (4,), np.uint8)
+    rgba[..., :3] = cfg["color"]
+    rgba[..., 3] = (cov * 255).astype(np.uint8)
+    Image.fromarray(rgba, "RGBA").save(GD_TEX / body / f"{body}_EVEClouds{suf}.png", optimize=True)
+
+
+def eve_object(body, cfg, nombre="nubes", suf=""):
     tex = f"{S.TEX}/{body}/{body}"
     r, g, b = cfg["color"]
+    dens = cfg.get("dens", 1.0)
     return f"""	OBJECT
 	{{
-		name = {body}-nubes
+		name = {body}-{nombre}
 		body = {body}
 		altitude = {cfg["alt"]}
 		detailSpeed = 0,6,0
@@ -184,7 +206,7 @@ def eve_object(body, cfg):
 			_Lambertian = 0.5
 			_MainTex
 			{{
-				value = {tex}_EVEClouds
+				value = {tex}_EVEClouds{suf}
 			}}
 			_FlowMap
 			{{
@@ -225,7 +247,7 @@ def eve_object(body, cfg):
 			}}
 			coverageMap
 			{{
-				value = {tex}_EVECoverage
+				value = {tex}_EVECoverage{suf}
 				type = AlphaMap
 				alphaMask = ALPHAMAP_R
 			}}
@@ -243,7 +265,7 @@ def eve_object(body, cfg):
 					minAltitude = {cfg["lo"]}
 					maxAltitude = {cfg["hi"]}
 					interpolateCloudHeights = true
-					density = 0.0001
+					density = {0.0001 * dens:g}
 					noiseEdgeHardness = 0.8
 					baseNoiseTiling = 3000
 					coverageCurve
@@ -263,7 +285,7 @@ def eve_object(body, cfg):
 					typeName = Torres
 					minAltitude = {cfg["lo"]}
 					maxAltitude = {int(cfg["lo"] + 0.7 * (cfg["hi"] - cfg["lo"]))}
-					density = 0.02
+					density = {0.02 * dens:g}
 					noiseEdgeHardness = 0.9
 					baseNoiseTiling = 3000
 					coverageCurve
@@ -292,6 +314,116 @@ def eve_object(body, cfg):
 
 def v3(t):
     return ",".join(f"{x:g}" for x in t)
+
+
+# ------------------------------------------------------------------ destello de Elara (Scatterer, texturas propias)
+DESTELLO = GD_TEX / "Elara" / "Destello"                     # construir.py los deja en PNG (DXT1 rompería los degradados)
+
+
+def _png(name, rgb):
+    """Guarda un destello aditivo: RGB lineal 0..1 (lo que pase de 1 se recorta), con tramado contra las bandas."""
+    rng = np.random.default_rng(len(name))
+    a = np.clip(rgb, 0, 1) ** (1 / 1.6) * 255 + rng.uniform(-0.5, 0.5, rgb.shape)
+    DESTELLO.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGB").save(DESTELLO / f"{name}.png", optimize=True)
+
+
+def _polar(N):
+    y, x = (np.mgrid[0:N, 0:N] + 0.5) / N * 2 - 1
+    return x, y, np.hypot(x, y), np.arctan2(y, x)
+
+
+def _mezcla(c0, c1, t):
+    t = np.clip(t, 0, 1)[..., None]
+    return np.array(c0) * (1 - t) + np.array(c1) * t
+
+
+def destello_texturas():
+    """Núcleo, estallido, raya anamórfica, halo y tres fantasmas, con el color de una K4 V (4 600 K)."""
+    rng = np.random.default_rng(4600)
+    naranja, blanco = (1.0, 0.60, 0.28), (1.0, 0.97, 0.92)
+    edge = lambda r: np.clip((1 - r) / 0.12, 0, 1) ** 2               # nada llega al borde de la textura
+    # Núcleo: disco saturado, resplandor 1/r² y corona ciliar (las «pestañas» finas que deja la lente)
+    x, y, r, th = _polar(1024)
+    lash = 1 + 0.45 * sum(np.sin(th * k + rng.uniform(0, 6)) for k in rng.integers(150, 420, 7)) / 7 * (r > 0.03)
+    inten = 3.0 * np.exp(-(r / 0.025) ** 2) + 0.9 / (1 + (r / 0.045) ** 2) ** 1.15 * lash + 0.18 * np.exp(-r / 0.3)
+    _png("Elara_Nucleo", inten[..., None] * _mezcla(blanco, naranja, r / 0.18) * edge(r)[..., None])
+    # Estallido: 6 picos de difracción (diafragma hexagonal) con bandas irisadas, 6 secundarios y rayos finos
+    x, y, r, th = _polar(2048)
+    acc = np.zeros(r.shape + (3,))
+    for k in range(12):
+        a = np.radians(15 + 30 * k)
+        along, perp = x * np.cos(a) + y * np.sin(a), np.abs(-x * np.sin(a) + y * np.cos(a))
+        main = k % 2 == 0
+        w = (0.0022 if main else 0.0011) * (1 + 3 * np.clip(along, 0, 1))
+        line = np.exp(-(perp / w) ** 2) * (along > 0) / (1 + (np.clip(along, 0, None) / (0.09 if main else 0.05)) ** 1.3)
+        disp = np.stack([0.5 + 0.5 * np.cos(along * 70 + ph) for ph in (0, 2.1, 4.2)], -1)
+        acc += (1.0 if main else 0.35) * line[..., None] * (0.7 * np.array(naranja) + 0.3 * disp)
+    for _ in range(260):
+        a, ln, w = rng.uniform(0, 2 * np.pi), rng.uniform(0.08, 0.7), rng.uniform(0.0005, 0.0016)
+        along, perp = x * np.cos(a) + y * np.sin(a), np.abs(-x * np.sin(a) + y * np.cos(a))
+        c = _mezcla(blanco, naranja, rng.uniform(0.2, 1.0) * np.ones(1))[0]
+        acc += rng.uniform(0.04, 0.22) * (np.exp(-(perp / w) ** 2) * (along > 0) * np.exp(-along / ln))[..., None] * c
+    _png("Elara_Rayos", acc * edge(r)[..., None])
+    # Raya anamórfica: cálida en el centro, cian en los extremos (el toque extraño)
+    core = np.exp(-(y / 0.0035) ** 2) * np.exp(-np.abs(x) / 0.33)
+    soft = 0.35 * np.exp(-(y / 0.018) ** 2) * np.exp(-np.abs(x) / 0.18)
+    _png("Elara_Raya", (core + soft)[..., None] * _mezcla((1.0, 0.82, 0.62), (0.45, 0.80, 1.0), np.abs(x) / 0.6)
+         * np.clip((1 - np.abs(x)) / 0.1, 0, 1)[..., None])
+    # Halo: anillo de 22° con dispersión (rojo fuera, azul dentro) y otro más tenue
+    x, y, r, th = _polar(1024)
+    ring = lambda r0, w, k: np.exp(-((r - r0 - k) / w) ** 2)
+    acc = np.stack([ring(0.62, 0.035, 0.02), ring(0.62, 0.035, 0.0), ring(0.62, 0.035, -0.02)], -1) * 0.8
+    acc += np.stack([ring(0.82, 0.05, 0.015), ring(0.82, 0.05, 0.0), ring(0.82, 0.05, -0.015)], -1) * 0.25
+    _png("Elara_Halo", acc * (0.85 + 0.15 * np.cos(th * 6))[..., None] * edge(r)[..., None])
+    # Fantasmas: hexágono (la forma del diafragma) con borde brillante y franja cromática; anillo irisado; disco ámbar
+    x, y, r, th = _polar(256)
+    hexr = r * np.cos(((th + np.pi / 6) % (np.pi / 3)) - np.pi / 6) / np.cos(np.pi / 6)   # «radio» hexagonal
+    fill = lambda s: np.clip((s - hexr) / 0.04, 0, 1)
+    rim = lambda s: np.exp(-((hexr - s) / 0.035) ** 2)
+    acc = np.stack([0.30 * fill(0.80) + 0.9 * rim(0.80), 0.32 * fill(0.78) + 0.8 * rim(0.78),
+                    0.40 * fill(0.76) + 1.0 * rim(0.76)], -1)
+    _png("Elara_FantasmaHex", acc * np.array([0.55, 0.85, 1.0]))
+    acc = np.stack([np.exp(-((r - r0) / 0.05) ** 2) for r0 in (0.74, 0.70, 0.66)], -1)
+    _png("Elara_FantasmaAnillo", acc * np.array([1.0, 0.75, 0.95]))
+    _png("Elara_FantasmaDisco", np.exp(-(r / 0.45) ** 2)[..., None] * np.array([1.0, 0.62, 0.25]))
+
+
+def _bloque(nombre, keys, ind):
+    pad = "\t" * ind
+    return [f"{pad}{nombre}", f"{pad}{{"] + [f"{pad}\tkey = {k}" for k in keys] + [f"{pad}}}"]
+
+
+def destello_cfg():
+    """Nodo Scatterer_sunflare de Elara. Las curvas van por distancia a la estrella y son planas en un margen amplio:
+    Termos y Titanus quedan dentro tanto si Scatterer mide en radios de la estrella como en Gm."""
+    t = f"{S.TEX}/Elara/Destello/Elara_"
+    scale = ["1 6 0 -0.2", "30 1.5 -0.01 -0.001", "500 1.1 0 0", "3000 0.7 0 0", "20000 0.3 0 0"]
+    inten = lambda pk: ["2 0 0 0", f"12 {pk} 0 0", f"3000 {pk} 0 0", f"20000 {pk * 0.4:g} 0 0"]
+    ghost_i = ["2 0 0 0", "12 1 0 0", "3000 1 0 0", "9000 0 0 0"]
+    L = ["// Destello de Elara: texturas propias (generar_visuales.destello_texturas): núcleo con corona ciliar,",
+         "// 12 picos de difracción irisados y 260 rayos, raya anamórfica, halo con dispersión y 14 fantasmas",
+         "// (hexágonos del diafragma, anillos irisados y discos ámbar)",
+         "Scatterer_sunflare", "{", "\tElara", "\t{", "\t\tsyntaxVersion = 2", "\t\tflareColor = 1.0,1.0,1.0",
+         "\t\tflares", "\t\t{"]
+    for tex, pk in (("Nucleo", 1.0), ("Rayos", 0.9), ("Raya", 0.7), ("Halo", 0.35)):
+        L += ["\t\t\tItem", "\t\t\t{", f"\t\t\t\ttexture = {t}{tex}.png", "\t\t\t\tdisplayAspectRatio = 1"]
+        L += _bloque("scaleCurve", scale, 4) + _bloque("intensityCurve", inten(pk), 4) + ["\t\t\t}"]
+    L += ["\t\t}", "\t\tghosts", "\t\t{"]
+    for tex, inst in (("FantasmaHex", [(0.35, 0.10, 0.25), (0.22, 0.22, 0.55), (0.16, 0.06, 0.72),
+                                        (0.30, 0.22, 1.25), (0.10, 0.30, 1.6), (0.12, 0.12, -0.3)]),
+                      ("FantasmaAnillo", [(0.20, 0.30, 0.9), (0.12, 0.48, 1.45), (0.08, 0.6, 0.35)]),
+                      ("FantasmaDisco", [(0.35, 0.08, 0.4), (0.5, 0.03, 1.05), (0.2, 0.14, 1.9), (0.25, 0.05, 1.35),
+                                         (0.15, 0.2, -0.15)])):
+        L += ["\t\t\tItem", "\t\t\t{", f"\t\t\t\ttexture = {t}{tex}.png"] + _bloque("intensityCurve", ghost_i, 4)
+        L += ["\t\t\t\tinstances", "\t\t\t\t{"]
+        for m, sc, pos in inst:
+            L += ["\t\t\t\t\tItem", "\t\t\t\t\t{", f"\t\t\t\t\t\tintensityMultiplier = {m}",
+                  "\t\t\t\t\t\tdisplayAspectRatio = 1", f"\t\t\t\t\t\tscale = {sc}",
+                  f"\t\t\t\t\t\tsunToScreenCenterPosition = {pos}", "\t\t\t\t\t}"]
+        L += ["\t\t\t\t}", "\t\t\t}"]
+    L += ["\t\t}", "\t}", "}"]
+    return "\n".join(L) + "\n"
 
 
 def scatterer_cfg():
@@ -407,10 +539,10 @@ def scatterer_cfg():
 	}}
 }}
 """)
-    # Destellos de Kraken (rojo apagado y más tenue) y de Elara (naranja): el de Kerbol, recoloreado
+    # Destello de Kraken: el de Kerbol, en rojo apagado y más tenue. El de Elara es propio (destello_cfg)
     sun = (KSP / "StockScattererConfigs/Sunflares/Sun.cfg").read_text(encoding="utf-8").lstrip("\ufeff")
-    flare = "\n".join(sun.replace("\n    Sun\n", f"\n    {star}\n", 1).replace("flareColor = 1.0,1.0,1.0", f"flareColor = {col}", 1)
-                      for star, col in (("Kraken", "0.6,0.32,0.28"), ("Elara", "1.0,0.72,0.45")))
+    flare = sun.replace("\n    Sun\n", "\n    Kraken\n", 1).replace("flareColor = 1.0,1.0,1.0", "flareColor = 0.6,0.32,0.28", 1)
+    flare += "\n" + destello_cfg()
     head = ["// GENERADO por herramientas/generar_visuales.py — no editar a mano.",
             "// Scatterer: atmósferas, océanos y destellos de Kraken y Elara. Usa las cáusticas y destellos de StockScattererConfigs."]
     patch = ["@Scatterer_planetsList:NEEDS[Scatterer]:FOR[MundosLejanos]", "{", "\t@scattererCelestialBodies", "\t{",
@@ -423,6 +555,7 @@ def eve_cfg():
             "// EVE: nubes 2D + volumétricas V5 (requiere el EVE de Blackrack y StockVolumetricClouds para el ruido).",
             "EVE_CLOUDS", "{"]
     body = "".join(eve_object(b, c) for b, c in EVE.items())
+    body += "".join(eve_object(b, c, c["nombre"], c["src"]) for b, c in EVE_EXTRA.items())
     swap = ["", "// Con EVE las nubes ya las pone EVE: la vista lejana pasa a la textura sin nubes horneadas.",
             "@Kopernicus:AFTER[MundosLejanos]:NEEDS[EnvironmentalVisualEnhancements]", "{"]
     for b, c in EVE.items():
@@ -454,11 +587,14 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for b, c in EVE.items():
         eve_textures(b, c)
+    for b, c in EVE_EXTRA.items():
+        eve_extra_textures(b, c)
+    destello_texturas()
     (OUT / "Scatterer.cfg").write_text(scatterer_cfg(), encoding="utf-8")
     (OUT / "EVE.cfg").write_text(eve_cfg(), encoding="utf-8")
     (OUT / "PlanetShine.cfg").write_text(planetshine_cfg(), encoding="utf-8")
     print(f"Scatterer: {len(SCATTERER)} atmósferas, {len(OCEANS)} océanos, destellos de Kraken y Elara")
-    print(f"EVE: {len(EVE)} capas (2D + volumétricas V5); texturas sin nubes para "
+    print(f"EVE: {len(EVE) + len(EVE_EXTRA)} capas (2D + volumétricas V5); texturas sin nubes para "
           f"{', '.join(b for b, c in EVE.items() if c['swap'])}")
     print(f"PlanetShine: {len(ALBEDO) + 2} cuerpos")
 

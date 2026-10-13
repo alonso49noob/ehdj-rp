@@ -13,6 +13,7 @@ import sys
 import numpy as np
 from PIL import Image
 
+import mu
 import sistema as S
 from generar_texturas import HEIGHTMAPS
 
@@ -134,8 +135,16 @@ def scatter_check(root, kop_bodies):
                 n += 1
                 models = [sc.get("model")] + [l.get("model") for l in sc.node("Distribution").node("LODs").all("LOD")]
                 for m in models:
-                    if KSP_GAMEDATA.exists() and not (KSP_GAMEDATA / f"{m}.mu").exists():
+                    if m.startswith(S.PACK + "/"):                  # modelos propios (generar_modelos.py)
+                        try:
+                            mu.read(GAMEDATA / f"{m}.mu")
+                        except (OSError, ValueError, IndexError) as e:
+                            errors.append(f"Parallax {body}/{sc.get('name')}: modelo {m}.mu ilegible ({e})")
+                    elif KSP_GAMEDATA.exists() and not (KSP_GAMEDATA / f"{m}.mu").exists():
                         errors.append(f"Parallax {body}/{sc.get('name')}: no existe el modelo {m}.mu")
+                tex = sc.node("Material").get("_MainTex") if sc.node("Material") else None
+                if tex and tex.startswith(S.PACK + "/"):
+                    check_texture(tex, f"Parallax {body}/{sc.get('name')}")
                 bl = sc.node("Distribution").node("BiomeBlacklist")
                 for _, name in (bl.values if bl else []):
                     if name not in valid:
