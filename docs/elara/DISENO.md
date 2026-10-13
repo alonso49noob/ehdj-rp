@@ -36,8 +36,10 @@ Consecuencias de juego: velocidad orbital en la superficie de 38.5 km/s y de esc
 ### Atmósfera y océano
 
 - **Aire:** 78 % H₂, 12 % He, 10 % H₂O (M = 3.85 g/mol), γ = 1.38. 218 atm y 700 K al nivel del mar; adiabática húmeda (κ = 0.2) hasta 160 K en la cima de las nubes. Con 21 g la atmósfera se aplasta: techo a ~70 km (`generar_atmosferas.py`). Densidad al nivel del mar: 14.6 kg/m³.
-- **Océano:** el punto crítico del agua es 647 K y 218 atm, así que a 700 K el "mar" es **agua supercrítica**: ni líquido ni vapor. Su densidad en la superficie ronda 0.15 g/cm³ y crece rápido con la profundidad (con 21 g, cada 100 m suman ~30 atm). En el juego, `density = 0.2`: la mayoría de las naves se hunden.
-- **Fondo:** todo el manto está bajo el mar, de **−179 km** (fosas) a **−18 km** (dorsales): 20 veces más hondo que en la primera versión. El relieve se calcula en la escala original y se multiplica por `TITANUS_PROF = 20` al guardar la altura (`offset = −180 000`, `deformity = 172 000`; 2.6 m por nivel de gris en 16 bits). Los umbrales de biomas siguen en la escala original.
+- **Océano:** el punto crítico del agua es 647 K y 218 atm, así que a 700 K el "mar" es **agua supercrítica**: ni líquido ni vapor. Su densidad en la superficie ronda 0.15 g/cm³ y crece rápido con la profundidad (con 21 g, cada 100 m suman ~30 atm). En el juego, `density = 0.6`: el agua va cargada de sales y sílice disueltas del manto, más densa que el agua supercrítica pura. Con 0.2 (hasta la v0.0.128) casi todo se hundía y costaba explorar.
+- **Bajo el mar (Scatterer):** océano propio, pardo y turbio, con 70 m de transparencia e índice de refracción 1.12 (agua poco densa). La niebla de Kopernicus ya no termina en negro.
+- **Fondo:** todo el manto está bajo el mar, de **−179 km** (fosas) a **−18 km** (dorsales): 20 veces más hondo que en la primera versión. El relieve se calcula en la escala original y se multiplica por `TITANUS_PROF = 20` al guardar la altura (`offset = −180 000`, `deformity = 178 800`; 2.7 m por nivel de gris en 16 bits). Los umbrales de biomas siguen en la escala original.
+- **Quillas de las balsas:** bajo los biomas Balsas Minerales y Jardines Químicos, la espuma vieja se compacta en una quilla de **2–3.5 km** de hondo (color crema en `_Surface`), con paredes de ~30 km hasta el fondo. Hace falta para Parallax: KSP subdivide el terreno según la altura de la nave **sobre el fondo** (`PQ.gcDist` = distancia horizontal × 1.3 + altura sobre el terreno), y Parallax solo reparte scatters en los quads de nivel máximo. Con el fondo a 50–120 km bajo las balsas, esos quads no llegaban a existir y en la v0.0.128 no aparecía ninguna formación.
 
 ### Balsas minerales y vida
 
@@ -69,7 +71,7 @@ Con 21 g nada alto se sostiene sin una raíz ancha: los continentes y la montañ
 
 Material: el shader biplanar de los icebergs de Kerbin con una textura propia (`PluginData/Titanus/Titanus_Roca.png`: estratos ondulados, vetas de sales y costras de sulfuros; `construir.py` la pasa a DDS) y la normal de los icebergs; roca mate (`_SpecularIntensity = 0.25`). `collisionLevel = 4`: se puede aterrizar en ellas.
 
-> **Por probar en el juego.** Parallax reparte los scatters sobre los quads del terreno. Con el fondo a 18–179 km, no está comprobado que los quads del fondo lleguen al nivel de detalle en el que Parallax los procesa. Si las formaciones no aparecen, hay dos salidas: subir el fondo bajo los biomas de balsas (por ejemplo, dorsales a −2 km) o reducir la profundidad.
+> **Comprobado en la v0.0.128 (zTallsRobot):** con el fondo a 18–179 km no aparecía ninguna formación. Desde la v0.0.129 las balsas tienen su quilla a 2–3.5 km (ver arriba). Las de las Dorsales (a 18–80 km) dependen del `minDetailDistance` del PQS: si ahí siguen sin salir, subirlo en `Titanus.cfg` o quitarles ese bioma.
 
 ### Biomas
 
@@ -102,6 +104,8 @@ Dos capas separadas por un hueco, para dar escala y profundidad: se ve la cubier
 |---|---|---|---|
 | `Titanus-nubes` | 9–24 km | `Titanus_Clouds.png`: las zonas claras de las bandas | ×3 la del resto del pack |
 | `Titanus-tormentas` | 26–44 km | `Titanus_Tormentas.png`: bordes de los cinturones (cizalla), tormentas y brazos de El Ojo | ×1.5 |
+
+Las coberturas son de **4 096 px** (5.5 km por píxel): las de 2 048 se veían borrosas de cerca. Se amplían y se recortan con ruido fino estirado en longitud para dar contornos nítidos sin perder la gradación de dentro, y `generar_visuales` apenas las suaviza (`blur = 0.6`).
 
 La vista lejana no se cambia con EVE (`swap = False`): las bandas horneadas hacen de capa profunda bajo las volumétricas.
 

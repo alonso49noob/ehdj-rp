@@ -67,6 +67,10 @@ OCEANS = {  # upwelling = color del agua profunda; underwater = niebla submarina
                    caps=0.15, foam=0.8),   # NH3 con hidracina: incoloro; casi negro en lo profundo, refleja el cielo
     "Termos": dict(wind=4, amp=0.6, up=(0.006, 0.020, 0.022), under=(0.20, 0.45, 0.45), clear=25, n=1.33,
                    caps=0.1, foam=1.2),    # agua a 140 °C con sílice: turquesa lechosa; espuma mineral en la orilla
+    # Titanus: agua supercrítica cargada de minerales: parda y turbia, pero con algo de visibilidad bajo el mar.
+    # n bajo (densidad baja); olas pequeñas con 21 g; espuma mineral en los bordes de las balsas
+    "Titanus": dict(wind=8, amp=0.6, up=(0.010, 0.007, 0.004), under=(0.34, 0.27, 0.19), clear=70, n=1.12,
+                    caps=0.15, foam=1.4),
 }
 
 # ------------------------------------------------------------------ EVE
@@ -83,14 +87,15 @@ EVE = {
                    cover=0.35),    # nubes de NH3 crema (menos que el 60 % inicial: tapaban el contraste mar/tierra)
     "Termos": dict(alt=2500, lo=2500, hi=7000, color=(238, 238, 234), fade=(70000, 100000), swap=True),   # vapor
     # Titanus: cubierta baja de nubes de agua, espesa y parda (la vista lejana sigue siendo la de bandas: swap=False)
-    "Titanus": dict(alt=9000, lo=9000, hi=24000, color=(200, 158, 124), fade=(900000, 1200000), swap=False, dens=3.0),
+    "Titanus": dict(alt=9000, lo=9000, hi=24000, color=(200, 158, 124), fade=(900000, 1200000), swap=False, dens=3.0,
+                    blur=0.6),     # cobertura de 4 096 px con bordes nítidos (generar_texturas): apenas se suaviza
 }
 # Capas volumétricas extra (mismo cuerpo, otra altura y otro mapa de cobertura): en Titanus, torres de tormenta
 # de 26 a 44 km sobre los bordes de los cinturones, las tormentas y los brazos de El Ojo (Titanus_Tormentas.png).
 # Dos capas separadas por un hueco dan la sensación de profundidad: se ve la cubierta baja entre las torres.
 EVE_EXTRA = {
     "Titanus": dict(nombre="tormentas", src="Tormentas", alt=26000, lo=26000, hi=44000, color=(150, 100, 80),
-                    fade=(900000, 1200000), dens=1.5),
+                    fade=(900000, 1200000), dens=1.5, blur=0.6),
 }
 OCEAN_SCALED = {"Halum": "#6b94cc", "Salus": "#24484a", "Termos": "#4f9aa6"}   # color del mar visto desde órbita
 
@@ -147,7 +152,7 @@ def coverage(body):
     else:                    # Creus: las nubes de metano son lo más brillante
         lum = col.mean(axis=2)
         cov = np.clip((lum - np.quantile(lum, 0.3)) / (lum.max() - np.quantile(lum, 0.3)), 0, 1)
-    im = Image.fromarray((cov * 255).astype(np.uint8), "L").filter(ImageFilter.GaussianBlur(2))
+    im = Image.fromarray((cov * 255).astype(np.uint8), "L").filter(ImageFilter.GaussianBlur(EVE[body].get("blur", 2)))
     return np.asarray(im, np.float32) / 255
 
 
@@ -178,7 +183,8 @@ def eve_textures(body, cfg):
 def eve_extra_textures(body, cfg):
     """Cobertura y capa 2D de una capa extra a partir de <Cuerpo>_<src>.png (alfa = cobertura)."""
     a = img(body, cfg["src"], "RGBA")[..., 3] / 255
-    cov = np.asarray(Image.fromarray((a * 255).astype(np.uint8), "L").filter(ImageFilter.GaussianBlur(2)), np.float32) / 255
+    cov = np.asarray(Image.fromarray((a * 255).astype(np.uint8), "L").filter(ImageFilter.GaussianBlur(cfg.get("blur", 2))),
+                     np.float32) / 255
     suf = cfg["src"]
     Image.fromarray((cov * 255).astype(np.uint8), "L").save(GD_TEX / body / f"{body}_EVECoverage{suf}.png", optimize=True)
     rgba = np.zeros(cov.shape + (4,), np.uint8)

@@ -35,7 +35,7 @@ HEIGHTMAPS = {
     "Karmen":   dict(offset=-1500, deformity=3000),
     "Talia":    dict(offset=-5500, deformity=11000),     # Gran Cuenca −4.5 km … anillos y tierras altas
     "Akira":    dict(offset=-3000, deformity=9000),      # Glaciar de Celdas −2.3 km … montañas de hielo y criovolcanes
-    "Titanus":  dict(offset=-180000, deformity=172000),  # todo bajo el mar supercrítico: fosas −179 km … dorsales −18 km
+    "Titanus":  dict(offset=-180000, deformity=178800),  # todo bajo el mar: fosas −179 km … dorsales −18 km, quillas −2 km
     # sistema Kraken
     "Krax":     dict(offset=-1800, deformity=3600),
     "Scarch":   dict(offset=-4000, deformity=9000),
@@ -147,6 +147,9 @@ class Perlin:
 
 def fbm(noise, P, scale=(1, 1, 1), octaves=6, persistence=0.5, lacunarity=2.0, ridged=False):
     x, y, z = P
+    if x.ndim == 2 and x.size > 2_000_000:   # por bloques de filas: a 4 096 px el ruido entero pide ~1 GB de temporales
+        return np.concatenate([fbm(noise, (x[i:i + 256], y[i:i + 256], z[i:i + 256]), scale, octaves, persistence,
+                                   lacunarity, ridged) for i in range(0, x.shape[0], 256)])
     total = np.zeros_like(x)
     amp, freq, norm = 1.0, 1.0, 0.0
     for k in range(octaves):
@@ -491,9 +494,6 @@ def titanus():
     ridge = fbm(n, P, (2.4, 2.4, 2.4), 6, ridged=True)
     h = -6200 + 2600 * base + 4200 * smooth(0.55, 0.9, ridge) + 250 * fbm(n, P, (30, 30, 30), 3)
     h = np.clip(h, -8950, -900)                    # Detalle_PQS añade colinas de hasta 400 m: que no asomen
-    # Océano 20 veces más hondo que en la primera versión: el relieve se calcula en la escala original (los umbrales
-    # de biomas y colores siguen en esas unidades) y se multiplica al guardar: dorsales a −18 km, fosas a −179 km
-    save(encode_height(h * TITANUS_PROF, "Titanus"), "Titanus", "Height")
 
     P2, LAT2, LON2 = grid(W // 2, H // 2)
     h2 = downsample(h, 2)
@@ -503,11 +503,26 @@ def titanus():
     cur = fbm(n, P2, (2.0, 2.0, 9.0), 5) + 0.6 * smooth(-4500, -2500, h2) - 0.35 * smooth(55, 75, np.abs(LAT2))
     rafts = cur > wquantile(cur, 0.84, np.cos(np.radians(LAT2)))         # ~16 % del océano
     life = rafts & (fbm(Perlin(4802), P2, (6, 6, 6), 4) > 0.12) & (np.abs(LAT2) < 50)
+
+    # Océano 20 veces más hondo que en la primera versión: el relieve se calcula en la escala original (los umbrales
+    # de biomas y colores siguen en esas unidades) y se multiplica al guardar: dorsales a −18 km, fosas a −179 km.
+    # Bajo los campos de balsas, la espuma vieja se compacta y forma una quilla de 2–3.5 km: ese es el "fondo" ahí.
+    # Sin ella, KSP no subdivide el terreno al máximo bajo la nave (cuenta la altura sobre el fondo) y Parallax,
+    # que solo reparte en los quads de nivel máximo, no ponía ninguna formación (v0.0.128).
+    keel_m = np.asarray(Image.fromarray(np.repeat(np.repeat(rafts, 2, 0), 2, 1).astype(np.uint8) * 255, "L")
+                        .filter(ImageFilter.GaussianBlur(3)), np.float32) / 255
+    keel_m = smooth(0.2, 0.6, keel_m)                                     # paredes de la quilla en ~30 km
+    keel = -2750 + 1000 * fbm(Perlin(4806), P, (14, 14, 14), 4)      # −3.5 … −2 km, ondulada
+    save(encode_height(h * TITANUS_PROF * (1 - keel_m) + keel * keel_m, "Titanus"), "Titanus", "Height")
+    del h, base, ridge, keel
+
     # Terreno real (PQS, solo visible bajo el mar): peridotita verdosa oscura, sales y sulfuros claros en las dorsales
     rock = ramp(h2 + 600 * fbm(n, P2, (12, 12, 12), 3), ["#55604f", "#3f473c", "#2c312b"])
     salt = ramp(fbm(n, P2, (20, 20, 20), 3), ["#e0d2a8", "#c9a86a", "#a8723c"])
     surf = rock * (1 - smooth(-3600, -2400, h2)[..., None]) + salt * smooth(-3600, -2400, h2)[..., None]
-    save(surf, "Titanus", "Surface")
+    foam = ramp(fbm(Perlin(4807), P2, (40, 40, 40), 4), ["#d6c49c", "#b49c74", "#8c7656"])   # quilla de espuma
+    k2 = downsample(keel_m, 2)[..., None]
+    save(surf * (1 - k2) + foam * k2, "Titanus", "Surface")
 
     # Vista lejana: nubes en bandas (no se ve el océano: 218 atm de hidrógeno con nubes de agua)
     latw = LAT2 + 5 * fbm(n, P2, (2.2, 2.2, 7.0), 5)
@@ -558,6 +573,15 @@ def titanus():
     deck = np.clip((f2 - np.quantile(f2, 0.35)) / (np.quantile(f2, 0.9) - np.quantile(f2, 0.35)), 0, 1)
     shear = np.abs(np.gradient(belts, axis=0)) / np.abs(np.gradient(belts, axis=0)).max()
     towers = np.clip(1.4 * shear * smooth(0.0, 0.5, fil) + 0.9 * storms + 0.8 * eye_in * arms * (1 - core), 0, 1)
+    # A 4 096 px (5.5 km por píxel; a 2 048 eran 11 y se veían borrosas): se amplían y se recortan con ruido fino
+    # estirado en longitud, con bordes más duros, para que las nubes tengan contornos definidos
+    def nitida(cov, seed, lo, hi, amp):
+        big = np.asarray(Image.fromarray(cov.astype(np.float32), "F").resize((W, H), Image.BICUBIC), np.float32)
+        fine = fbm(Perlin(seed), P, (24, 24, 70), 5)
+        edge = smooth(lo, hi, big + amp * fine)                         # contorno nítido
+        return edge * np.clip(0.35 + 0.65 * big + 0.8 * fine, 0.15, 1)  # sin perder la gradación de dentro
+    deck = nitida(deck, 4808, 0.22, 0.42, 0.45)
+    towers = nitida(towers, 4809, 0.03, 0.12, 0.12)      # las torres son débiles (media 0.03): umbral más bajo
     for name, cov, rgb in (("Clouds", deck, "#d9c3a0"), ("Tormentas", towers, "#b48a68")):
         rgba = np.zeros(cov.shape + (4,), np.uint8)
         rgba[..., :3] = hexrgb(rgb).astype(np.uint8)
